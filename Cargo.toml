@@ -1,0 +1,11 @@
+[package]
+name = "emigui_miniquad"
+version = "0.1.0"
+authors = ["Logachev Fedor <not.fl3@gmail.com >"]
+edition = "2018"
+
+[dependencies]
+emigui = { git = "https://github.com/emilk/emigui.git", package = "emigui" }
+
+miniquad = "=0.2.47"
+
