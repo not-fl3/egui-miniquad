@@ -7,5 +7,5 @@ edition = "2018"
 [dependencies]
 emigui = { git = "https://github.com/emilk/emigui.git", package = "emigui" }
 
-miniquad = "=0.2.50"
+miniquad = "0.2"
 
