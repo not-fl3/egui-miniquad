@@ -1,7 +1,7 @@
 use egui::{paint::Triangles, PaintJobs, Texture};
 
 use miniquad::{
-    Bindings, BlendFactor, BlendValue, Buffer, BufferLayout, BufferType, Context, Equation,
+    Bindings, BlendFactor, BlendValue, BlendState, Buffer, BufferLayout, BufferType, Context, Equation,
     Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
 };
 
@@ -35,9 +35,9 @@ impl Painter {
                 VertexAttribute::new("a_tc", VertexFormat::Short2),
                 VertexAttribute::new("a_color", VertexFormat::Byte4),
             ],
-            shader,
+            shader.expect("couldn't make shader"),
             PipelineParams {
-                color_blend: Some((
+                color_blend: Some(BlendState::new(
                     Equation::Add,
                     BlendFactor::Value(BlendValue::SourceAlpha),
                     BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
@@ -153,7 +153,7 @@ impl Painter {
 }
 
 mod shader {
-    use miniquad::{ShaderMeta, UniformBlockLayout, UniformType};
+    use miniquad::{ShaderMeta, UniformBlockLayout, UniformType, UniformDesc};
 
     pub const VERTEX: &str = r#"#version 100
     uniform vec2 u_screen_size;
@@ -192,8 +192,8 @@ mod shader {
         images: &["u_sampler"],
         uniforms: UniformBlockLayout {
             uniforms: &[
-                ("u_screen_size", UniformType::Float2),
-                ("u_tex_size", UniformType::Float2),
+                UniformDesc::new("u_screen_size", UniformType::Float2),
+                UniformDesc::new("u_tex_size", UniformType::Float2),
             ],
         },
     };

@@ -1,9 +1,5 @@
 use {
-    egui::{
-        label, pos2, vec2,
-        widgets::{Button, Label},
-        Align, Id, Layout,
-    },
+    egui::{pos2, vec2},
     emigui_miniquad::Painter,
     miniquad::{self as mq, conf, Context, EventHandler},
     std::time::Instant,
@@ -52,12 +48,14 @@ impl EventHandler for Stage {
         // TODO: give all of the raw_input information egui wants so everything works properly
         self.raw_input.time = self.start_time.elapsed().as_nanos() as f64 * 1e-9;
 
-        let mut ui = self.egui_ctx.begin_frame(self.raw_input.take());
+        let ui = self.egui_ctx.begin_frame(self.raw_input.take());
         egui::Window::new("Debug").show(ui.ctx(), |ui| {
             ui.add(
                 egui::Label::new("Egui running inside of Miniquad")
                     .text_style(egui::TextStyle::Heading),
             );
+            ui.separator();
+            ui.label("Woooohoooo!");
             if ui.button("Quit").clicked {
                 std::process::exit(0);
             }
