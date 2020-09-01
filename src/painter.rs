@@ -1,4 +1,4 @@
-use egui::{paint::tessellator::{PaintJob, PaintJobs}, Texture};
+use egui::{paint::tessellator::{PaintJob, PaintJobs}, Texture, math::clamp};
 
 use miniquad::{
     Bindings, BlendFactor, BlendValue, BlendState, Buffer, BufferLayout, BufferType, Context, Equation,
@@ -108,7 +108,7 @@ impl Painter {
         }
     }
 
-    pub fn paint_job(&mut self, ctx: &mut Context, (rect, mesh): PaintJob) {
+    pub fn paint_job(&mut self, ctx: &mut Context, (clip_rect, mesh): PaintJob) {
         let texture = self.bindings.images[0];
 
         if self.vertex_buffer_size < mesh.vertices.len() {
@@ -149,11 +149,28 @@ impl Painter {
         let screen_size = ctx.screen_size();
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
         ctx.apply_pipeline(&self.pipeline);
+
+        let (width_pixels, height_pixels) = ctx.screen_size();
+        // https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L276
+        let pixels_per_point = ctx.dpi_scale();
+        let clip_min_x = pixels_per_point * clip_rect.min.x;
+        let clip_min_y = pixels_per_point * clip_rect.min.y;
+        let clip_max_x = pixels_per_point * clip_rect.max.x;
+        let clip_max_y = pixels_per_point * clip_rect.max.y;
+        let clip_min_x = clamp(clip_min_x, 0.0..=width_pixels as f32);
+        let clip_min_y = clamp(clip_min_y, 0.0..=height_pixels as f32);
+        let clip_max_x = clamp(clip_max_x, clip_min_x..=width_pixels as f32);
+        let clip_max_y = clamp(clip_max_y, clip_min_y..=height_pixels as f32);
+        let clip_min_x = clip_min_x.round() as i32;
+        let clip_min_y = clip_min_y.round() as i32;
+        let clip_max_x = clip_max_x.round() as i32;
+        let clip_max_y = clip_max_y.round() as i32;
+
         ctx.apply_scissor_rect(
-            rect.min.x as i32,
-            (screen_size.1 - rect.max.y) as i32,
-            rect.width() as i32,
-            rect.height() as i32,
+            clip_min_x,
+            height_pixels as i32 - clip_max_y,
+            clip_max_x - clip_min_x,
+            clip_max_y - clip_min_y,
         );
         ctx.apply_bindings(&self.bindings);
         ctx.apply_uniforms(&shader::Uniforms {
