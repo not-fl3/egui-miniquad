@@ -161,16 +161,16 @@ impl Painter {
         let clip_min_y = clamp(clip_min_y, 0.0..=height_pixels as f32);
         let clip_max_x = clamp(clip_max_x, clip_min_x..=width_pixels as f32);
         let clip_max_y = clamp(clip_max_y, clip_min_y..=height_pixels as f32);
-        let clip_min_x = clip_min_x.round() as i32;
-        let clip_min_y = clip_min_y.round() as i32;
-        let clip_max_x = clip_max_x.round() as i32;
-        let clip_max_y = clip_max_y.round() as i32;
+        let clip_min_x = clip_min_x.round() as u32;
+        let clip_min_y = clip_min_y.round() as u32;
+        let clip_max_x = clip_max_x.round() as u32;
+        let clip_max_y = clip_max_y.round() as u32;
 
         ctx.apply_scissor_rect(
-            clip_min_x,
-            height_pixels as i32 - clip_max_y,
-            clip_max_x - clip_min_x,
-            clip_max_y - clip_min_y,
+            clip_min_x as i32,
+            (height_pixels as u32 - clip_max_y) as i32,
+            (clip_max_x - clip_min_x) as i32,
+            (clip_max_y - clip_min_y) as i32,
         );
         ctx.apply_bindings(&self.bindings);
         ctx.apply_uniforms(&shader::Uniforms {
