@@ -1,4 +1,4 @@
-use egui::{paint::Triangles, PaintJobs, Texture};
+use egui::{paint::tessellator::{PaintJob, PaintJobs}, Texture};
 
 use miniquad::{
     Bindings, BlendFactor, BlendValue, BlendState, Buffer, BufferLayout, BufferType, Context, Equation,
@@ -73,36 +73,43 @@ impl Painter {
         }
     }
 
+    fn rebuild_texture(&mut self, ctx: &mut Context, texture: &Texture) {
+        self.texture_hash = texture.id;
+
+        self.bindings.images[0].delete();
+
+        let mut pixels = Vec::new();
+        for pixel in &texture.pixels {
+            pixels.push(*pixel);
+            pixels.push(*pixel);
+            pixels.push(*pixel);
+        }
+        assert_eq!(pixels.len(), texture.width * texture.height * 3);
+        self.bindings.images[0] = miniquad::Texture::from_data_and_format(
+            ctx,
+            &pixels,
+            miniquad::TextureParams {
+                width: texture.width as _,
+                height: texture.height as _,
+                format: miniquad::TextureFormat::RGB8,
+                ..Default::default()
+            },
+        );
+    }
+
+
     pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
-        for (_, triangles) in jobs {
-            self.paint_triangles(ctx, triangles, texture);
+        if texture.id != self.texture_hash {
+            self.rebuild_texture(ctx, texture);
+        }
+
+        for paint_job in jobs {
+            self.paint_job(ctx, paint_job);
         }
     }
 
-    pub fn paint_triangles(&mut self, ctx: &mut Context, mesh: Triangles, texture: &Texture) {
-        if texture.id != self.texture_hash {
-            self.texture_hash = texture.id;
-
-            self.bindings.images[0].delete();
-
-            let mut pixels = Vec::new();
-            for pixel in &texture.pixels {
-                pixels.push(*pixel);
-                pixels.push(*pixel);
-                pixels.push(*pixel);
-            }
-            assert_eq!(pixels.len(), texture.width * texture.height * 3);
-            self.bindings.images[0] = miniquad::Texture::from_data_and_format(
-                ctx,
-                &pixels,
-                miniquad::TextureParams {
-                    width: texture.width as _,
-                    height: texture.height as _,
-                    format: miniquad::TextureFormat::RGB8,
-                    ..Default::default()
-                },
-            );
-        }
+    pub fn paint_job(&mut self, ctx: &mut Context, (rect, mesh): PaintJob) {
+        let texture = self.bindings.images[0];
 
         if self.vertex_buffer_size < mesh.vertices.len() {
             self.vertex_buffer_size = mesh.vertices.len();
@@ -139,11 +146,18 @@ impl Painter {
         let indices = mesh.indices.iter().map(|x| *x as u16).collect::<Vec<u16>>();
         self.bindings.index_buffer.update(ctx, &indices);
 
+        let screen_size = ctx.screen_size();
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
         ctx.apply_pipeline(&self.pipeline);
+        ctx.apply_scissor_rect(
+            rect.min.x as i32,
+            (screen_size.1 - rect.max.y) as i32,
+            rect.width() as i32,
+            rect.height() as i32,
+        );
         ctx.apply_bindings(&self.bindings);
         ctx.apply_uniforms(&shader::Uniforms {
-            screen_size: ctx.screen_size(),
+            screen_size,
             tex_size: (texture.width as f32, texture.height as f32),
         });
         ctx.draw(0, mesh.indices.len() as i32, 1);

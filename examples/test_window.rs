@@ -49,9 +49,9 @@ impl EventHandler for Stage {
         self.raw_input.time = self.start_time.elapsed().as_nanos() as f64 * 1e-9;
 
         let ui = self.egui_ctx.begin_frame(self.raw_input.take());
-        egui::Window::new("Debug").show(ui.ctx(), |ui| {
+        egui::Window::new("Debug").default_size(vec2(200.0, 100.0)).show(ui.ctx(), |ui| {
             ui.add(
-                egui::Label::new("Egui running inside of Miniquad")
+                egui::Label::new("Egui on Miniquad")
                     .text_style(egui::TextStyle::Heading),
             );
             ui.separator();
