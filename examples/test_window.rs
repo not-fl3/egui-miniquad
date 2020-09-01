@@ -1,17 +1,18 @@
 use {
-    emigui::{
-        label,
-        math::vec2,
+    egui::{
+        label, pos2, vec2,
         widgets::{Button, Label},
-        Align, Emigui,
+        Align, Id, Layout,
     },
     emigui_miniquad::Painter,
     miniquad::{self as mq, conf, Context, EventHandler},
+    std::time::Instant,
 };
 
 struct Stage {
-    emigui: Emigui,
-    raw_input: emigui::RawInput,
+    egui_ctx: std::sync::Arc<egui::Context>,
+    raw_input: egui::RawInput,
+    start_time: Instant,
     painter: Painter,
 }
 
@@ -42,27 +43,29 @@ impl EventHandler for Stage {
     }
 
     fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32) {
-        self.raw_input.mouse_pos = Some(vec2(x as f32, y as f32));
+        self.raw_input.mouse_pos = Some(pos2(x as f32, y as f32));
     }
 
     fn draw(&mut self, ctx: &mut Context) {
         ctx.clear(Some((0., 0., 0., 1.)), None, None);
 
-        self.emigui.new_frame(self.raw_input);
-        let mut region = self.emigui.whole_screen_region();
-        let mut region = region.left_column(region.width().min(480.0));
-        region.set_align(Align::Min);
-        region.add(
-            label!("Emigui running inside of Miniquad").text_style(emigui::TextStyle::Heading),
-        );
-        if region.add(Button::new("Quit")).clicked {
-            std::process::exit(0);
-        }
-        self.emigui.example(&mut region);
-        let mesh = self.emigui.paint();
-        let texture = self.emigui.texture();
+        // TODO: give all of the raw_input information egui wants so everything works properly
+        self.raw_input.time = self.start_time.elapsed().as_nanos() as f64 * 1e-9;
 
-        self.painter.paint(ctx, mesh, texture);
+        let mut ui = self.egui_ctx.begin_frame(self.raw_input.take());
+        egui::Window::new("Debug").show(ui.ctx(), |ui| {
+            ui.add(
+                egui::Label::new("Egui running inside of Miniquad")
+                    .text_style(egui::TextStyle::Heading),
+            );
+            if ui.button("Quit").clicked {
+                std::process::exit(0);
+            }
+        });
+        // TODO: handle this output so that hyperlinks, etc. work
+        let (_, paint_jobs) = self.egui_ctx.end_frame();
+
+        self.painter.paint(ctx, paint_jobs, self.egui_ctx.texture());
     }
 }
 
@@ -70,20 +73,23 @@ fn main() {
     miniquad::start(conf::Conf::default(), |mut ctx| {
         mq::UserData::owning(
             {
+                let egui_ctx = egui::Context::new();
+
                 let pixels_per_point = ctx.dpi_scale();
-                let raw_input = emigui::RawInput {
-                    screen_size: {
-                        let (width, height) = ctx.screen_size();
-                        vec2(width as f32, height as f32) / pixels_per_point
-                    },
-                    pixels_per_point,
+                let (width, height) = ctx.screen_size();
+                let screen_size = vec2(width as f32, height as f32) / pixels_per_point;
+
+                let raw_input = egui::RawInput {
+                    screen_size,
+                    pixels_per_point: Some(pixels_per_point),
                     ..Default::default()
                 };
 
                 Stage {
-                    emigui: Emigui::new(ctx.dpi_scale()),
+                    egui_ctx,
                     painter: Painter::new(&mut ctx),
                     raw_input,
+                    start_time: Instant::now(),
                 }
             },
             ctx,

@@ -5,7 +5,6 @@ authors = ["Logachev Fedor <not.fl3@gmail.com >"]
 edition = "2018"
 
 [dependencies]
-emigui = { git = "https://github.com/emilk/emigui.git", rev="7cd8ac2bb", package = "emigui" }
-
 miniquad = "0.2"
+egui = "0.1.3"
 

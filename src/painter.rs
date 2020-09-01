@@ -1,11 +1,11 @@
-use emigui::{Mesh, Texture};
+use egui::{paint::Triangles, PaintJobs, Texture};
 
 use miniquad::{
     Bindings, BlendFactor, BlendValue, Buffer, BufferLayout, BufferType, Context, Equation,
     Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
 };
 
-// This is exact copy of emigui::Vertex,  but with #[repr(C)]
+// This is exact copy of egui::Vertex,  but with #[repr(C)]
 // TODO: consider making a PR instead
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(C)]
@@ -73,7 +73,13 @@ impl Painter {
         }
     }
 
-    pub fn paint(&mut self, ctx: &mut Context, mesh: Mesh, texture: &Texture) {
+    pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
+        for (_, triangles) in jobs {
+            self.paint_triangles(ctx, triangles, texture);
+        }
+    }
+
+    pub fn paint_triangles(&mut self, ctx: &mut Context, mesh: Triangles, texture: &Texture) {
         if texture.id != self.texture_hash {
             self.texture_hash = texture.id;
 
