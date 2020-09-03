@@ -1,12 +1,8 @@
-use egui::{
-    math::clamp,
-    paint::tessellator::{PaintJob, PaintJobs},
-    Texture,
-};
+use egui::{paint::tessellator::{PaintJob, PaintJobs}, Texture, math::clamp};
 
 use miniquad::{
-    Bindings, BlendFactor, BlendState, BlendValue, Buffer, BufferLayout, BufferType, Context,
-    Equation, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
+    Bindings, BlendFactor, BlendValue, BlendState, Buffer, BufferLayout, BufferType, Context, Equation,
+    Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
 };
 
 // This is exact copy of egui::Vertex,  but with #[repr(C)]

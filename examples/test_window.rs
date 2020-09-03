@@ -51,16 +51,17 @@ impl EventHandler for Stage {
         self.raw_input.time = self.start_time.elapsed().as_nanos() as f64 * 1e-9;
 
         let ui = self.egui_ctx.begin_frame(self.raw_input.take());
-        egui::Window::new("Debug")
-            .default_size(vec2(200.0, 100.0))
-            .show(ui.ctx(), |ui| {
-                ui.add(egui::Label::new("Egui on Miniquad").text_style(egui::TextStyle::Heading));
-                ui.separator();
-                ui.label("Woooohoooo!");
-                if ui.button("Quit").clicked {
-                    std::process::exit(0);
-                }
-            });
+        egui::Window::new("Debug").default_size(vec2(200.0, 100.0)).show(ui.ctx(), |ui| {
+            ui.add(
+                egui::Label::new("Egui on Miniquad")
+                    .text_style(egui::TextStyle::Heading),
+            );
+            ui.separator();
+            ui.label("Woooohoooo!");
+            if ui.button("Quit").clicked {
+                std::process::exit(0);
+            }
+        });
         // TODO: handle this output so that hyperlinks, etc. work
         let (_, paint_jobs) = self.egui_ctx.end_frame();
 
