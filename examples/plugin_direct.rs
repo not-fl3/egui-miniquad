@@ -53,7 +53,7 @@ impl EventHandler for Stage {
     fn update(&mut self, _: &mut Context) {}
 
     fn draw(&mut self, ctx: &mut Context) {
-        ctx.clear(Some((1., 1., 1., 1.)), None, None);
+        //ctx.clear(Some((1., 1., 1., 1.)), None, None);
         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
         ctx.end_render_pass();
 

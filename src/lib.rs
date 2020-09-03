@@ -9,6 +9,7 @@ pub struct UiPlugin {
     pub raw_input: egui::RawInput,
     pub paint_jobs: PaintJobs,
     pub painter: Painter,
+    pub start_time: f64,
 }
 
 impl UiPlugin {
@@ -29,6 +30,7 @@ impl UiPlugin {
             egui_ctx,
             painter: Painter::new(ctx),
             paint_jobs: Vec::with_capacity(10_000),
+            start_time: miniquad::date::now(),
             raw_input,
         }
     }
@@ -42,6 +44,7 @@ impl UiPlugin {
     }
 
     pub fn ui(&mut self, ctx: &mut miniquad::Context, f: impl FnOnce(&mut egui::Ui)) {
+        self.raw_input.time = miniquad::date::now() - self.start_time;
         let input = self.raw_input.take();
         let mut ui = self.egui_ctx.begin_frame(input);
         f(&mut ui);
@@ -61,10 +64,13 @@ pub fn ui(f: impl FnOnce(&mut egui::Ui)) {
 
 #[cfg(feature = "macroquad-plugin")]
 impl macroquad::drawing::DrawableUi for UiPlugin {
-    fn draw(&mut self, _: &mut quad_gl::QuadGl, ctx: &mut miniquad::Context) {
+    fn draw_ui(&mut self, _: &mut quad_gl::QuadGl, ctx: &mut miniquad::Context) {
         self.draw(ctx);
     }
-    fn mut_any(&mut self) -> &mut dyn std::any::Any {
+    fn new(ctx: &mut miniquad::Context) -> Self where Self: Sized {
+        Self::new(ctx)
+    }
+    fn any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 }

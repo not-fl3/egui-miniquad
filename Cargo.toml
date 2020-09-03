@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Logachev Fedor <not.fl3@gmail.com >"]
 edition = "2018"
 
+[[example]]
+name = "shop"
+required-features = [ "macroquad-plugin" ]
+
 [features]
 macroquad-plugin = ["macroquad", "quad-gl"]
 
@@ -11,5 +15,10 @@ macroquad-plugin = ["macroquad", "quad-gl"]
 miniquad = { version = "=0.3.0-alpha.11" }
 egui = "0.1.3"
 quad-gl = { version = "0.2.3", optional = true }
-# macroquad = { version = "0.2.9", optional = true }
-macroquad = { path = "../macroquad", optional = true }
+
+[dependencies.macroquad]
+git = "https://github.com/cedric-h/macroquad"
+branch = "ui_plugin"
+default-features = false
+features = [ "custom-ui" ]
+optional = true
