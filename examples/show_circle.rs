@@ -1,5 +1,5 @@
+use egui::{Align, Layout};
 use macroquad::*;
-use egui::{Layout, Align};
 
 #[macroquad::main("Simple Macroquad Egui")]
 async fn main() {
@@ -20,7 +20,12 @@ async fn main() {
         });
 
         if show_circle {
-            draw_circle(screen_width() / 2.0, screen_height() / 2.0, circle_size, RED);
+            draw_circle(
+                screen_width() / 2.0,
+                screen_height() / 2.0,
+                circle_size,
+                RED,
+            );
         }
 
         next_frame().await;

@@ -1,6 +1,6 @@
 use {
     emigui_miniquad::{convert_keycode, Painter},
-    miniquad::{self as mq, conf, Context, EventHandler, KeyMods, KeyCode, MouseButton},
+    miniquad::{self as mq, conf, Context, EventHandler, KeyCode, KeyMods, MouseButton},
 };
 
 struct Stage {

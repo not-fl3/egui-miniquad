@@ -77,13 +77,19 @@ impl UiPlugin {
                     .push(egui::Event::Key { key, pressed: true });
             }
         }
-        for (i, pressed) in self.tracked_keys.iter_mut().enumerate().filter(|(_, p)| **p) {
+        for (i, pressed) in self
+            .tracked_keys
+            .iter_mut()
+            .enumerate()
+            .filter(|(_, p)| **p)
+        {
             let kc = KeyCode::from(i as u32);
             if let Some(key) = convert_keycode(kc).filter(|_| !is_key_down(kc)) {
                 *pressed = false;
-                self.raw_input
-                    .events
-                    .push(egui::Event::Key { key, pressed: false });
+                self.raw_input.events.push(egui::Event::Key {
+                    key,
+                    pressed: false,
+                });
             }
         }
         let typed_characters = typed_characters();
