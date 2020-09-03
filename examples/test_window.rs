@@ -1,46 +1,64 @@
 use {
-    egui::{pos2, vec2},
-    emigui_miniquad::Painter,
-    miniquad::{self as mq, conf, Context, EventHandler},
-    std::time::Instant,
+    emigui_miniquad::{convert_keycode, Painter},
+    miniquad::{self as mq, conf, Context, EventHandler, KeyMods, KeyCode, MouseButton},
 };
 
 struct Stage {
     egui_ctx: std::sync::Arc<egui::Context>,
     raw_input: egui::RawInput,
-    start_time: Instant,
+    start_time: f64,
     painter: Painter,
 }
 
 impl EventHandler for Stage {
-    fn update(&mut self, _ctx: &mut Context) {}
-
-    fn resize_event(&mut self, _ctx: &mut Context, width: f32, height: f32) {
-        self.raw_input.screen_size = vec2(width, height);
+    fn resize_event(&mut self, _: &mut Context, width: f32, height: f32) {
+        self.raw_input.screen_size = egui::vec2(width, height);
     }
 
-    fn mouse_button_down_event(
-        &mut self,
-        _ctx: &mut Context,
-        _: miniquad::MouseButton,
-        _x: f32,
-        _y: f32,
-    ) {
+    fn mouse_motion_event(&mut self, _: &mut Context, x: f32, y: f32) {
+        self.raw_input.mouse_pos = Some(egui::pos2(x, y));
+    }
+    fn mouse_wheel_event(&mut self, _: &mut Context, x: f32, y: f32) {
+        self.raw_input.scroll_delta = egui::vec2(x, y);
+    }
+    fn mouse_button_down_event(&mut self, _: &mut Context, _btn: MouseButton, x: f32, y: f32) {
+        self.raw_input.mouse_pos = Some(egui::pos2(x, y));
         self.raw_input.mouse_down = true;
     }
-    fn mouse_button_up_event(
-        &mut self,
-        _ctx: &mut Context,
-        _: miniquad::MouseButton,
-        _x: f32,
-        _y: f32,
-    ) {
+    fn mouse_button_up_event(&mut self, _: &mut Context, _btn: MouseButton, x: f32, y: f32) {
+        self.raw_input.mouse_pos = Some(egui::pos2(x, y));
         self.raw_input.mouse_down = false;
     }
 
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32) {
-        self.raw_input.mouse_pos = Some(pos2(x as f32, y as f32));
+    fn char_event(&mut self, _: &mut Context, character: char, _modifiers: KeyMods, _repeat: bool) {
+        self.raw_input
+            .events
+            .push(egui::Event::Text(String::from(character)));
     }
+
+    fn key_down_event(
+        &mut self,
+        _: &mut Context,
+        keycode: KeyCode,
+        _modifiers: KeyMods,
+        _repeat: bool,
+    ) {
+        if let Some(key) = convert_keycode(keycode) {
+            self.raw_input
+                .events
+                .push(egui::Event::Key { key, pressed: true });
+        }
+    }
+    fn key_up_event(&mut self, _: &mut Context, keycode: KeyCode, _: KeyMods) {
+        if let Some(key) = convert_keycode(keycode) {
+            self.raw_input.events.push(egui::Event::Key {
+                key,
+                pressed: false,
+            });
+        }
+    }
+
+    fn update(&mut self, _: &mut Context) {}
 
     fn draw(&mut self, ctx: &mut Context) {
         ctx.clear(Some((1., 1., 1., 1.)), None, None);
@@ -48,20 +66,19 @@ impl EventHandler for Stage {
         ctx.end_render_pass();
 
         // TODO: give all of the raw_input information egui wants so everything works properly
-        self.raw_input.time = self.start_time.elapsed().as_nanos() as f64 * 1e-9;
+        self.raw_input.time = miniquad::date::now() - self.start_time;
 
         let ui = self.egui_ctx.begin_frame(self.raw_input.take());
-        egui::Window::new("Debug").default_size(vec2(200.0, 100.0)).show(ui.ctx(), |ui| {
-            ui.add(
-                egui::Label::new("Egui on Miniquad")
-                    .text_style(egui::TextStyle::Heading),
-            );
-            ui.separator();
-            ui.label("Woooohoooo!");
-            if ui.button("Quit").clicked {
-                std::process::exit(0);
-            }
-        });
+        egui::Window::new("Debug")
+            .default_size(egui::vec2(200.0, 100.0))
+            .show(ui.ctx(), |ui| {
+                ui.add(egui::Label::new("Egui on Miniquad").text_style(egui::TextStyle::Heading));
+                ui.separator();
+                ui.label("Woooohoooo!");
+                if ui.button("Quit").clicked {
+                    std::process::exit(0);
+                }
+            });
         // TODO: handle this output so that hyperlinks, etc. work
         let (_, paint_jobs) = self.egui_ctx.end_frame();
 
@@ -77,7 +94,7 @@ fn main() {
 
                 let pixels_per_point = ctx.dpi_scale();
                 let (width, height) = ctx.screen_size();
-                let screen_size = vec2(width as f32, height as f32) / pixels_per_point;
+                let screen_size = egui::vec2(width as f32, height as f32) / pixels_per_point;
 
                 let raw_input = egui::RawInput {
                     screen_size,
@@ -89,7 +106,7 @@ fn main() {
                     egui_ctx,
                     painter: Painter::new(&mut ctx),
                     raw_input,
-                    start_time: Instant::now(),
+                    start_time: miniquad::date::now(),
                 }
             },
             ctx,

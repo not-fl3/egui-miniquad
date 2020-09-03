@@ -48,50 +48,50 @@ impl Data {
     }
 
     /*
-    fn slots(&mut self, ui: &mut Ui) {
+    fn slots(&mut self, ui: &mut egui::Ui) {
         let item_dragging = &mut self.item_dragging;
 
         let fit_command = &mut self.fit_command;
         for (label, slot) in self.slots.iter_mut() {
-            Group::new(hash!("grp", slot.id, &label), Vector2::new(210., 55.)).ui(ui, |ui| {
-                let drag = Group::new(slot.id, Vector2::new(50., 50.))
-                    // slot without item is not draggable
-                    .draggable(slot.item.is_some())
-                    // but could be a target of drag
-                    .hoverable(*item_dragging)
-                    // and is highlighted with other color when some item is dragging
-                    .highlight(*item_dragging)
-                    .ui(ui, |ui| {
-                        if let Some(ref item) = slot.item {
-                            ui.label(Vector2::new(5., 10.), &item);
-                        }
-                    });
+            let drag = Group::new(slot.id, Vector2::new(50., 50.))
+                // slot without item is not draggable
+                .draggable(slot.item.is_some())
+                // but could be a target of drag
+                .hoverable(*item_dragging)
+                // and is highlighted with other color when some item is dragging
+                .highlight(*item_dragging)
+                .ui(ui, |ui| {
+                    if let Some(ref item) = slot.item {
+                        ui.label(&item);
+                    }
+                });
 
-                match drag {
-                    // there is some item in this slot and it was dragged to another slot
-                    Drag::Dropped(_, Some(id)) if slot.item.is_some() => {
-                        *fit_command = Some(FittingCommand::Refit {
-                            target_slot: id,
-                            origin_slot: slot.id,
-                        });
-                    }
-                    // there is some item in this slot and it was dragged out - unfit it
-                    Drag::Dropped(_, None) if slot.item.is_some() => {
-                        *fit_command = Some(FittingCommand::Unfit {
-                            target_slot: slot.id,
-                        });
-                    }
-                    // there is no item in this slot
-                    // this is impossible - slots without items are non-draggable
-                    Drag::Dropped(_, _) => unreachable!(),
-                    Drag::Dragging(pos, id) => {
-                        debug!("slots: pos: {:?}, id {:?}", pos, id);
-                        *item_dragging = true;
-                    }
-                    Drag::No => {}
+            match drag {
+                // there is some item in this slot and it was dragged to another slot
+                Drag::Dropped(_, Some(id)) if slot.item.is_some() => {
+                    *fit_command = Some(FittingCommand::Refit {
+                        target_slot: id,
+                        origin_slot: slot.id,
+                    });
                 }
-                ui.label(Vector2::new(60., 20.), label);
-            });
+                // there is some item in this slot and it was dragged out - unfit it
+                Drag::Dropped(_, None) if slot.item.is_some() => {
+                    *fit_command = Some(FittingCommand::Unfit {
+                        target_slot: slot.id,
+                    });
+                }
+                // there is no item in this slot
+                // this is impossible - slots without items are non-draggable
+                Drag::Dropped(_, _) => unreachable!(),
+                Drag::Dragging(pos, id) => {
+                    debug!("slots: pos: {:?}, id {:?}", pos, id);
+                    *item_dragging = true;
+                }
+                Drag::No => {}
+            }
+            ui.label(Vector2::new(60., 20.), label);
+
+            ui.separator();
         }
     }
 
@@ -131,15 +131,11 @@ impl Data {
     }
 }
 
-fn config() -> MacroConfig<emigui_miniquad::UiPlugin> {
-    MacroConfig::new(Default::default())
-}
-
-#[macroquad::main(config)]
+#[macroquad::main("Ye Olde Shoppe")]
 async fn main() {
+    let mut ui = emigui_miniquad::UiPlugin::new();
     let mut data = Data::new();
 
-/*
     let mut data0 = String::new();
     let mut data1 = String::new();
 
@@ -147,13 +143,13 @@ async fn main() {
     let mut text1 = String::new();
 
     let mut number0 = 0.;
-    let mut number1 = 0.;*/
+    let mut number1 = 0.;
     loop {
         clear_background(WHITE);
 
-        use egui::{vec2, pos2, Window};
+        use egui::{pos2, vec2, Slider, TextEdit, Window};
 
-        emigui_miniquad::ui(|ui| {
+        ui.macroquad(|ui| {
             Window::new("Shop")
                 .default_size(vec2(400.0, 200.0))
                 .default_pos(pos2(320.0, 400.0))
@@ -171,6 +167,47 @@ async fn main() {
                         });
                         ui.allocate_space(vec2(0.0, 40.0));
                     }
+                });
+
+            Window::new("Egui Showcase Window")
+                .default_size(vec2(470., 50.))
+                .default_pos(pos2(300., 300.))
+                .show(ui.ctx(), |ui| {
+                    ui.collapsing("Input", |ui| {
+                        ui.label("Some random text");
+                        if ui.button("click me").clicked {
+                            println!("hi");
+                        }
+
+                        ui.separator();
+
+                        ui.label("Some other random text");
+                        if ui.button("other button").clicked {
+                            println!("hi2");
+                        }
+
+                        ui.separator();
+
+                        ui.label("input text 1");
+                        ui.add(TextEdit::new(&mut data0).id("data2"));
+                        ui.label("input text 2");
+                        ui.add(TextEdit::new(&mut data1).id("data1"));
+                        ui.label(&format!("Text entered: \"{}\" and \"{}\"", data0, data1));
+
+                        ui.separator();
+                    });
+                    ui.collapsing("Sliders", |ui| {
+                        ui.add(Slider::f32(&mut number0, -10.0..=10.0));
+                        ui.add(Slider::f32(&mut number1, 0.0..=100.0));
+                    });
+                    ui.collapsing("Editbox 1", |ui| {
+                        ui.label("This is editbox!");
+                        ui.add(TextEdit::new(&mut text0).multiline(true));
+                    });
+                    ui.collapsing("Editbox 2", |ui| {
+                        ui.label("This is editbox!");
+                        ui.add(TextEdit::new(&mut text1).multiline(true));
+                    });
                 });
 
             Window::new("")
@@ -196,54 +233,6 @@ async fn main() {
                 });
                 Group::new(hash!(), Vector2::new(280., 400.)).ui(ui, |ui| {
                     data.inventory(ui);
-                });
-            },
-        );
-
-        draw_window(
-            hash!(),
-            glam::vec2(470., 50.),
-            glam::vec2(300., 300.),
-            WindowParams {
-                label: "Megaui Showcase Window".to_string(),
-                ..Default::default()
-            },
-            |ui| {
-                ui.tree_node(hash!(), "input", |ui| {
-                    ui.label(None, "Some random text");
-                    if ui.button(None, "click me") {
-                        println!("hi");
-                    }
-
-                    ui.separator();
-
-                    ui.label(None, "Some other random text");
-                    if ui.button(None, "other button") {
-                        println!("hi2");
-                    }
-
-                    ui.separator();
-
-                    ui.input_field(hash!(), "<- input text 1", &mut data0);
-                    ui.input_field(hash!(), "<- input text 2", &mut data1);
-                    ui.label(
-                        None,
-                        &format!("Text entered: \"{}\" and \"{}\"", data0, data1),
-                    );
-
-                    ui.separator();
-                });
-                ui.tree_node(hash!(), "sliders", |ui| {
-                    ui.slider(hash!(), "[-10 .. 10]", -10f32..10f32, &mut number0);
-                    ui.slider(hash!(), "[0 .. 100]", 0f32..100f32, &mut number1);
-                });
-                ui.tree_node(hash!(), "editbox 1", |ui| {
-                    ui.label(None, "This is editbox!");
-                    ui.editbox(hash!(), megaui::Vector2::new(285., 165.), &mut text0);
-                });
-                ui.tree_node(hash!(), "editbox 2", |ui| {
-                    ui.label(None, "This is editbox!");
-                    ui.editbox(hash!(), megaui::Vector2::new(285., 165.), &mut text1);
                 });
             },
         );*/

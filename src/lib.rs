@@ -1,19 +1,29 @@
 use egui::PaintJobs;
-use miniquad::{KeyCode, KeyMods, MouseButton};
+use miniquad::KeyCode;
 mod painter;
 
 pub use painter::Painter;
+
+/// The number of unique miniquad::KeyCodes
+const KEY_COUNT: usize = 128;
 
 pub struct UiPlugin {
     pub egui_ctx: std::sync::Arc<egui::Context>,
     pub raw_input: egui::RawInput,
     pub paint_jobs: PaintJobs,
     pub painter: Painter,
+    #[cfg(feature = "macroquad")]
+    pub tracked_keys: [bool; KEY_COUNT],
     pub start_time: f64,
 }
 
 impl UiPlugin {
-    pub fn new(ctx: &mut miniquad::Context) -> Self {
+    #[cfg(feature = "macroquad")]
+    pub fn new() -> Self {
+        unsafe { Self::from_mq(macroquad::get_internal_mq()) }
+    }
+
+    pub fn from_mq(ctx: &mut miniquad::Context) -> Self {
         let egui_ctx = egui::Context::new();
 
         let pixels_per_point = ctx.dpi_scale();
@@ -31,6 +41,8 @@ impl UiPlugin {
             painter: Painter::new(ctx),
             paint_jobs: Vec::with_capacity(10_000),
             start_time: miniquad::date::now(),
+            #[cfg(feature = "macroquad")]
+            tracked_keys: [false; KEY_COUNT],
             raw_input,
         }
     }
@@ -43,96 +55,123 @@ impl UiPlugin {
         );
     }
 
-    pub fn ui(&mut self, ctx: &mut miniquad::Context, f: impl FnOnce(&mut egui::Ui)) {
+    #[cfg(feature = "macroquad")]
+    fn collect_input(&mut self) {
+        use macroquad::*;
+
+        self.raw_input.screen_size = egui::vec2(screen_width(), screen_height());
+        self.raw_input.mouse_pos = {
+            let (x, y) = mouse_position();
+            Some(egui::pos2(x, y))
+        };
+        self.raw_input.scroll_delta = {
+            let (x, y) = mouse_wheel();
+            egui::vec2(x, y)
+        };
+        self.raw_input.mouse_down = is_mouse_button_down(MouseButton::Left);
+        for &kc in EGUI_KEYS.iter() {
+            if let Some(key) = convert_keycode(kc).filter(|_| is_key_pressed(kc)) {
+                self.tracked_keys[kc as usize] = true;
+                self.raw_input
+                    .events
+                    .push(egui::Event::Key { key, pressed: true });
+            }
+        }
+        for (i, pressed) in self.tracked_keys.iter_mut().enumerate().filter(|(_, p)| **p) {
+            let kc = KeyCode::from(i as u32);
+            if let Some(key) = convert_keycode(kc).filter(|_| !is_key_down(kc)) {
+                *pressed = false;
+                self.raw_input
+                    .events
+                    .push(egui::Event::Key { key, pressed: false });
+            }
+        }
+        let typed_characters = typed_characters();
+        if !typed_characters.is_empty() {
+            self.raw_input
+                .events
+                .push(egui::Event::Text(typed_characters));
+        }
+    }
+
+    #[cfg(feature = "macroquad")]
+    pub fn macroquad(&mut self, f: impl FnOnce(&mut egui::Ui)) {
+        self.collect_input();
+        let output = self.ui(f);
+
+        unsafe {
+            let ctx = macroquad::get_internal_mq();
+            self.apply_output(ctx, output);
+            self.draw(ctx);
+        }
+    }
+
+    pub fn ui(&mut self, f: impl FnOnce(&mut egui::Ui)) -> egui::Output {
         self.raw_input.time = miniquad::date::now() - self.start_time;
-        let input = self.raw_input.take();
-        let mut ui = self.egui_ctx.begin_frame(input);
-        f(&mut ui);
-        let (output, paint_jobs) = self.egui_ctx.end_frame();
+
+        let (output, paint_jobs) = {
+            let mut ui = self.egui_ctx.begin_frame(self.raw_input.take());
+            f(&mut ui);
+            self.egui_ctx.end_frame()
+        };
+
+        self.paint_jobs = paint_jobs;
+        output
+    }
+
+    pub fn apply_output(&mut self, ctx: &mut miniquad::Context, output: egui::Output) {
         if !output.copied_text.is_empty() {
             miniquad::clipboard::set(ctx, &output.copied_text)
         }
-
-        self.paint_jobs = paint_jobs;
     }
 }
 
-#[cfg(feature = "macroquad-plugin")]
-pub fn ui(f: impl FnOnce(&mut egui::Ui)) {
-    macroquad::custom_ui::<UiPlugin, _>(|ctx, plugin| plugin.ui(ctx, f));
-}
-
-#[cfg(feature = "macroquad-plugin")]
-impl macroquad::drawing::DrawableUi for UiPlugin {
-    fn draw_ui(&mut self, _: &mut quad_gl::QuadGl, ctx: &mut miniquad::Context) {
-        self.draw(ctx);
-    }
-    fn new(ctx: &mut miniquad::Context) -> Self where Self: Sized {
-        Self::new(ctx)
-    }
-    fn any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
-}
-
+/// All of the keys Egui is interested in receiving, as miniquad KeyCodes.
+pub const EGUI_KEYS: &[KeyCode] = &[
+    KeyCode::LeftAlt,
+    KeyCode::RightAlt,
+    KeyCode::Backspace,
+    KeyCode::LeftControl,
+    KeyCode::RightControl,
+    KeyCode::Delete,
+    KeyCode::Down,
+    KeyCode::End,
+    KeyCode::Escape,
+    KeyCode::Home,
+    KeyCode::Insert,
+    KeyCode::Left,
+    KeyCode::LeftSuper,
+    KeyCode::RightSuper,
+    KeyCode::PageDown,
+    KeyCode::PageUp,
+    KeyCode::Enter,
+    KeyCode::Right,
+    KeyCode::LeftShift,
+    KeyCode::RightShift,
+    KeyCode::Tab,
+    KeyCode::Up,
+];
 pub fn convert_keycode(keycode: KeyCode) -> Option<egui::Key> {
+    use KeyCode::*;
     Some(match keycode {
-        KeyCode::Up => egui::Key::Up,
-        KeyCode::Down => egui::Key::Down,
-        KeyCode::Right => egui::Key::Right,
-        KeyCode::Left => egui::Key::Left,
-        KeyCode::Home => egui::Key::Home,
-        KeyCode::End => egui::Key::End,
-        KeyCode::Delete => egui::Key::Delete,
-        KeyCode::Backspace => egui::Key::Backspace,
-        KeyCode::Enter => egui::Key::Enter,
-        KeyCode::Tab => egui::Key::Tab,
+        LeftAlt | RightAlt => egui::Key::Alt,
+        Backspace => egui::Key::Backspace,
+        LeftControl | RightControl => egui::Key::Control,
+        Delete => egui::Key::Delete,
+        Down => egui::Key::Down,
+        End => egui::Key::End,
+        Escape => egui::Key::Escape,
+        Home => egui::Key::Home,
+        Insert => egui::Key::Insert,
+        Left => egui::Key::Left,
+        LeftSuper | RightSuper => egui::Key::Logo,
+        PageDown => egui::Key::PageDown,
+        PageUp => egui::Key::PageUp,
+        Enter => egui::Key::Enter,
+        Right => egui::Key::Right,
+        LeftShift | RightShift => egui::Key::Shift,
+        Tab => egui::Key::Tab,
+        Up => egui::Key::Up,
         _ => return None,
     })
-}
-
-impl miniquad::EventHandlerFree for UiPlugin {
-    fn resize_event(&mut self, width: f32, height: f32) {
-        self.raw_input.screen_size = egui::vec2(width, height);
-    }
-
-    fn mouse_motion_event(&mut self, x: f32, y: f32) {
-        self.raw_input.mouse_pos = Some(egui::pos2(x, y));
-    }
-    fn mouse_wheel_event(&mut self, x: f32, y: f32) {
-        self.raw_input.scroll_delta = egui::vec2(x, y);
-    }
-    fn mouse_button_down_event(&mut self, _btn: MouseButton, x: f32, y: f32) {
-        self.raw_input.mouse_pos = Some(egui::pos2(x, y));
-        self.raw_input.mouse_down = true;
-    }
-    fn mouse_button_up_event(&mut self, _btn: MouseButton, x: f32, y: f32) {
-        self.raw_input.mouse_pos = Some(egui::pos2(x, y));
-        self.raw_input.mouse_down = false;
-    }
-
-    fn char_event(&mut self, character: char, _modifiers: KeyMods, _repeat: bool) {
-        self.raw_input
-            .events
-            .push(egui::Event::Text(String::from(character)));
-    }
-
-    fn key_down_event(&mut self, keycode: KeyCode, _modifiers: KeyMods, _repeat: bool) {
-        if let Some(key) = convert_keycode(keycode) {
-            self.raw_input
-                .events
-                .push(egui::Event::Key { key, pressed: true });
-        }
-    }
-    fn key_up_event(&mut self, keycode: KeyCode, _: KeyMods) {
-        if let Some(key) = convert_keycode(keycode) {
-            self.raw_input.events.push(egui::Event::Key {
-                key,
-                pressed: false,
-            });
-        }
-    }
-
-    fn draw(&mut self) {}
-    fn update(&mut self) {}
 }
