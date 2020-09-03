@@ -2,7 +2,7 @@
 
 <img src="2020-09-03_19-22.png" width="50%">
 
-```rs
+``` rust
 use macroquad::*;
 
 #[macroquad::main("Simple Macroquad Egui")]
