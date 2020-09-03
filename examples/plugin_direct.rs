@@ -1,11 +1,14 @@
 use {
     egui::vec2,
     emigui_miniquad::UiPlugin,
-    miniquad::{self as mq, conf, Context, EventHandler, EventHandlerFree, KeyMods, KeyCode, MouseButton, TouchPhase},
+    miniquad::{
+        self as mq, conf, Context, EventHandler, EventHandlerFree, KeyCode, KeyMods, MouseButton,
+        TouchPhase,
+    },
 };
 
 struct Stage {
-    ui: UiPlugin
+    ui: UiPlugin,
 }
 
 impl EventHandler for Stage {
@@ -30,7 +33,13 @@ impl EventHandler for Stage {
         self.ui.char_event(character, modifiers, repeat);
     }
 
-    fn key_down_event(&mut self, _: &mut Context, keycode: KeyCode, modifiers: KeyMods, repeat: bool) {
+    fn key_down_event(
+        &mut self,
+        _: &mut Context,
+        keycode: KeyCode,
+        modifiers: KeyMods,
+        repeat: bool,
+    ) {
         self.ui.key_down_event(keycode, modifiers, repeat);
     }
     fn key_up_event(&mut self, _: &mut Context, keycode: KeyCode, modifiers: KeyMods) {
@@ -49,17 +58,18 @@ impl EventHandler for Stage {
         ctx.end_render_pass();
 
         self.ui.ui(ctx, |ui| {
-            egui::Window::new("Debug").default_size(vec2(200.0, 100.0)).show(ui.ctx(), |ui| {
-                ui.add(
-                    egui::Label::new("Egui on Miniquad")
-                        .text_style(egui::TextStyle::Heading),
-                );
-                ui.separator();
-                ui.label("Woooohoooo!");
-                if ui.button("Quit").clicked {
-                    std::process::exit(0);
-                }
-            });
+            egui::Window::new("Debug")
+                .default_size(vec2(200.0, 100.0))
+                .show(ui.ctx(), |ui| {
+                    ui.add(
+                        egui::Label::new("Egui on Miniquad").text_style(egui::TextStyle::Heading),
+                    );
+                    ui.separator();
+                    ui.label("Woooohoooo!");
+                    if ui.button("Quit").clicked {
+                        std::process::exit(0);
+                    }
+                });
         });
 
         self.ui.draw(ctx);
@@ -69,7 +79,7 @@ impl EventHandler for Stage {
 fn main() {
     miniquad::start(conf::Conf::default(), |mut ctx| {
         let ui_plugin = Stage {
-            ui: UiPlugin::new(&mut ctx)
+            ui: UiPlugin::new(&mut ctx),
         };
         mq::UserData::owning(ui_plugin, ctx)
     });

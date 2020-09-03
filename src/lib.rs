@@ -37,7 +37,7 @@ impl UiPlugin {
         self.painter.paint(
             ctx,
             std::mem::take(&mut self.paint_jobs),
-            self.egui_ctx.texture()
+            self.egui_ctx.texture(),
         );
     }
 
@@ -106,15 +106,16 @@ impl miniquad::EventHandlerFree for UiPlugin {
     }
 
     fn char_event(&mut self, character: char, _modifiers: KeyMods, _repeat: bool) {
-        self.raw_input.events.push(egui::Event::Text(String::from(character)));
+        self.raw_input
+            .events
+            .push(egui::Event::Text(String::from(character)));
     }
 
     fn key_down_event(&mut self, keycode: KeyCode, _modifiers: KeyMods, _repeat: bool) {
         if let Some(key) = convert_keycode(keycode) {
-            self.raw_input.events.push(egui::Event::Key {
-                key,
-                pressed: true,
-            });
+            self.raw_input
+                .events
+                .push(egui::Event::Key { key, pressed: true });
         }
     }
     fn key_up_event(&mut self, keycode: KeyCode, _: KeyMods) {
@@ -129,4 +130,3 @@ impl miniquad::EventHandlerFree for UiPlugin {
     fn draw(&mut self) {}
     fn update(&mut self) {}
 }
-
