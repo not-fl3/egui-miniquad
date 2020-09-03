@@ -1,3 +1,6 @@
+[`examples/show_circle.png`](2020-09-03_19-22.png)
+
+```rs
 use macroquad::*;
 
 #[macroquad::main("Simple Macroquad Egui")]
@@ -30,3 +33,4 @@ async fn main() {
         next_frame().await;
     }
 }
+```
