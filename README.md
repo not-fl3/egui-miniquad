@@ -1,4 +1,6 @@
-[`examples/show_circle.png`](2020-09-03_19-22.png)
+# `examples/show_circle.png`
+
+<img src="2020-09-03_19-22.png" width="50%">
 
 ```rs
 use macroquad::*;
