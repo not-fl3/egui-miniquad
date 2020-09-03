@@ -32,14 +32,8 @@ impl UiPlugin {
             raw_input,
         }
     }
-}
 
-#[cfg(feature = "macroquad-plugin")]
-impl macroquad::drawing::DrawableUi for UiPlugin {
-    type Ui = egui::Ui;
-    type UiRet = ();
-
-    fn draw(&mut self, _: &mut quad_gl::QuadGl, ctx: &mut miniquad::Context) {
+    pub fn draw(&mut self, ctx: &mut miniquad::Context) {
         self.painter.paint(
             ctx,
             std::mem::take(&mut self.paint_jobs),
@@ -47,16 +41,31 @@ impl macroquad::drawing::DrawableUi for UiPlugin {
         );
     }
 
-    fn ui(&mut self, ctx: &mut miniquad::Context, f: impl FnOnce(Self::Ui) -> Self::UiRet) {
+    pub fn ui(&mut self, ctx: &mut miniquad::Context, f: impl FnOnce(&mut egui::Ui)) {
         let input = self.raw_input.take();
-        let ui = self.egui_ctx.begin_frame(input);
-        f(ui);
+        let mut ui = self.egui_ctx.begin_frame(input);
+        f(&mut ui);
         let (output, paint_jobs) = self.egui_ctx.end_frame();
         if !output.copied_text.is_empty() {
             miniquad::clipboard::set(ctx, &output.copied_text)
         }
 
         self.paint_jobs = paint_jobs;
+    }
+}
+
+#[cfg(feature = "macroquad-plugin")]
+pub fn ui(f: impl FnOnce(&mut egui::Ui)) {
+    macroquad::custom_ui::<UiPlugin, _>(|ctx, plugin| plugin.ui(ctx, f));
+}
+
+#[cfg(feature = "macroquad-plugin")]
+impl macroquad::drawing::DrawableUi for UiPlugin {
+    fn draw(&mut self, _: &mut quad_gl::QuadGl, ctx: &mut miniquad::Context) {
+        self.draw(ctx);
+    }
+    fn mut_any(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 
