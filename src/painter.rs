@@ -101,12 +101,12 @@ impl Painter {
         );
     }
 
-    pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
+    pub fn paint(&mut self, ctx: &mut Context, jobs: &mut PaintJobs, texture: &Texture) {
         if texture.id != self.texture_hash {
             self.rebuild_texture(ctx, texture);
         }
 
-        for paint_job in jobs {
+        for paint_job in jobs.drain(..) {
             self.paint_job(ctx, paint_job);
         }
     }
