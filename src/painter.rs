@@ -140,7 +140,12 @@ impl Painter {
             .map(|x| Vertex {
                 pos: (x.pos.x, x.pos.y),
                 uv: x.uv,
-                color: (x.color.0[0], x.color.0[1], x.color.0[2], x.color.0[3]),
+                color: {
+                    let egui::paint::Rgba(rgba) = x.color.into();
+                    let mut d = rgba.iter().map(|&x| (x * 255.0) as u8);
+                    let mut n = || d.next().unwrap();
+                    (n(), n(), n(), n())
+                },
             })
             .collect::<Vec<Vertex>>();
         self.bindings.vertex_buffers[0].update(ctx, &vertices);
