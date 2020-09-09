@@ -189,9 +189,9 @@ async fn main() {
                         ui.separator();
 
                         ui.label("input text 1");
-                        ui.add(TextEdit::new(&mut data0).id("data2"));
+                        ui.add(TextEdit::new(&mut data0).id_source("data2"));
                         ui.label("input text 2");
-                        ui.add(TextEdit::new(&mut data1).id("data1"));
+                        ui.add(TextEdit::new(&mut data1).id_source("data1"));
                         ui.label(&format!("Text entered: \"{}\" and \"{}\"", data0, data1));
 
                         ui.separator();
