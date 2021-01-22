@@ -29,7 +29,7 @@ pub struct Painter {
 
 impl Painter {
     pub fn new(ctx: &mut Context) -> Painter {
-        let shader = Shader::new(ctx, shader::VERTEX, shader::FRAGMENT, shader::META);
+        let shader = Shader::new(ctx, shader::VERTEX, shader::FRAGMENT, shader::meta());
 
         let pipeline = Pipeline::with_params(
             ctx,
@@ -206,7 +206,7 @@ mod shader {
             1.0 - 2.0 * a_pos.y / u_screen_size.y,
             0.0,
             1.0);
-        
+
         v_tc = a_tc / u_tex_size;
         v_color = a_color / 255.0;
     }"#;
@@ -222,15 +222,17 @@ mod shader {
     }
     "#;
 
-    pub const META: ShaderMeta = ShaderMeta {
-        images: &["u_sampler"],
-        uniforms: UniformBlockLayout {
-            uniforms: &[
-                UniformDesc::new("u_screen_size", UniformType::Float2),
-                UniformDesc::new("u_tex_size", UniformType::Float2),
-            ],
-        },
-    };
+    pub fn meta() -> ShaderMeta {
+        ShaderMeta {
+            images: vec![],
+            uniforms: UniformBlockLayout {
+                uniforms: vec![
+                    UniformDesc::new("u_screen_size", UniformType::Float2),
+                    UniformDesc::new("u_tex_size", UniformType::Float2),
+                ],
+            },
+        }
+    }
 
     #[repr(C)]
     #[derive(Debug)]

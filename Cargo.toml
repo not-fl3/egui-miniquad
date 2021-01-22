@@ -5,6 +5,6 @@ authors = ["Logachev Fedor <not.fl3@gmail.com >"]
 edition = "2018"
 
 [dependencies]
-miniquad = { version = "=0.3.0-alpha.11" }
+miniquad = { version = "=0.3.0-alpha.25" }
 egui = "0.1.3"
 
