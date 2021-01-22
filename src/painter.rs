@@ -72,21 +72,23 @@ impl Painter {
 
         self.bindings.images[0].delete();
 
-        let mut pixels = Vec::new();
-        for pixel in &texture.pixels {
-            pixels.push(*pixel);
-            pixels.push(*pixel);
-            pixels.push(*pixel);
+        let mut texture_data = Vec::new();
+        for pixel in texture.srgba_pixels() {
+            texture_data.push(pixel.r());
+            texture_data.push(pixel.g());
+            texture_data.push(pixel.b());
+            texture_data.push(pixel.a());
         }
-        assert_eq!(pixels.len(), texture.width * texture.height * 3);
+        assert_eq!(texture_data.len(), texture.width * texture.height * 4);
         self.bindings.images[0] = miniquad::Texture::from_data_and_format(
             ctx,
-            &pixels,
+            &texture_data,
             miniquad::TextureParams {
+                format: miniquad::TextureFormat::RGBA8,
+                wrap: miniquad::TextureWrap::Clamp,
+                filter: miniquad::FilterMode::Linear,
                 width: texture.width as _,
                 height: texture.height as _,
-                format: miniquad::TextureFormat::RGB8,
-                ..Default::default()
             },
         );
     }
