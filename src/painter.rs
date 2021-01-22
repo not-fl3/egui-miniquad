@@ -40,13 +40,13 @@ impl Painter {
             },
         );
 
-        let vertex_buffer_size = 100;
+        let vertex_buffer_size = 10 * 1024;
         let vertex_buffer = Buffer::stream(
             ctx,
             BufferType::VertexBuffer,
             vertex_buffer_size * std::mem::size_of::<Vertex>(),
         );
-        let index_buffer_size = 100;
+        let index_buffer_size = 10 * 1024;
         let index_buffer = Buffer::stream(
             ctx,
             BufferType::IndexBuffer,
