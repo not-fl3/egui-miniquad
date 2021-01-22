@@ -146,43 +146,45 @@ impl Painter {
         self.bindings.vertex_buffers[0].update(ctx, &vertices);
 
         // TODO: support u32 indices in miniquad and just use "mesh.indices"
-        let indices = mesh.indices.iter().map(|x| *x as u16).collect::<Vec<u16>>();
-        self.bindings.index_buffer.update(ctx, &indices);
+        for mesh in mesh.split_to_u16() {
+            let indices = mesh.indices.iter().map(|x| *x as u16).collect::<Vec<u16>>();
+            self.bindings.index_buffer.update(ctx, &indices);
 
-        let screen_size = ctx.screen_size();
-        ctx.begin_default_pass(miniquad::PassAction::Nothing);
-        ctx.apply_pipeline(&self.pipeline);
+            let screen_size = ctx.screen_size();
+            ctx.begin_default_pass(miniquad::PassAction::Nothing);
+            ctx.apply_pipeline(&self.pipeline);
 
-        let (width_pixels, height_pixels) = ctx.screen_size();
-        // https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L276
-        let pixels_per_point = ctx.dpi_scale();
-        let clip_min_x = pixels_per_point * clip_rect.min.x;
-        let clip_min_y = pixels_per_point * clip_rect.min.y;
-        let clip_max_x = pixels_per_point * clip_rect.max.x;
-        let clip_max_y = pixels_per_point * clip_rect.max.y;
-        let clip_min_x = clamp(clip_min_x, 0.0..=width_pixels as f32);
-        let clip_min_y = clamp(clip_min_y, 0.0..=height_pixels as f32);
-        let clip_max_x = clamp(clip_max_x, clip_min_x..=width_pixels as f32);
-        let clip_max_y = clamp(clip_max_y, clip_min_y..=height_pixels as f32);
-        let clip_min_x = clip_min_x.round() as u32;
-        let clip_min_y = clip_min_y.round() as u32;
-        let clip_max_x = clip_max_x.round() as u32;
-        let clip_max_y = clip_max_y.round() as u32;
+            let (width_pixels, height_pixels) = ctx.screen_size();
+            // https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L276
+            let pixels_per_point = ctx.dpi_scale();
+            let clip_min_x = pixels_per_point * clip_rect.min.x;
+            let clip_min_y = pixels_per_point * clip_rect.min.y;
+            let clip_max_x = pixels_per_point * clip_rect.max.x;
+            let clip_max_y = pixels_per_point * clip_rect.max.y;
+            let clip_min_x = clamp(clip_min_x, 0.0..=width_pixels as f32);
+            let clip_min_y = clamp(clip_min_y, 0.0..=height_pixels as f32);
+            let clip_max_x = clamp(clip_max_x, clip_min_x..=width_pixels as f32);
+            let clip_max_y = clamp(clip_max_y, clip_min_y..=height_pixels as f32);
+            let clip_min_x = clip_min_x.round() as u32;
+            let clip_min_y = clip_min_y.round() as u32;
+            let clip_max_x = clip_max_x.round() as u32;
+            let clip_max_y = clip_max_y.round() as u32;
 
-        ctx.apply_scissor_rect(
-            clip_min_x as i32,
-            (height_pixels as u32 - clip_max_y) as i32,
-            (clip_max_x - clip_min_x) as i32,
-            (clip_max_y - clip_min_y) as i32,
-        );
-        ctx.apply_bindings(&self.bindings);
-        ctx.apply_uniforms(&shader::Uniforms {
-            screen_size,
-            tex_size: (texture.width as f32, texture.height as f32),
-        });
-        ctx.draw(0, mesh.indices.len() as i32, 1);
-        ctx.end_render_pass();
-        ctx.commit_frame();
+            ctx.apply_scissor_rect(
+                clip_min_x as i32,
+                (height_pixels as u32 - clip_max_y) as i32,
+                (clip_max_x - clip_min_x) as i32,
+                (clip_max_y - clip_min_y) as i32,
+            );
+            ctx.apply_bindings(&self.bindings);
+            ctx.apply_uniforms(&shader::Uniforms {
+                screen_size,
+                tex_size: (texture.width as f32, texture.height as f32),
+            });
+            ctx.draw(0, mesh.indices.len() as i32, 1);
+            ctx.end_render_pass();
+            ctx.commit_frame();
+        }
     }
 }
 
