@@ -1,6 +1,6 @@
 use egui::{
     math::clamp,
-    paint::tessellator::{PaintJob, PaintJobs},
+    paint::{PaintJob, PaintJobs, Vertex},
     Texture,
 };
 
@@ -8,16 +8,6 @@ use miniquad::{
     Bindings, BlendFactor, BlendState, BlendValue, Buffer, BufferLayout, BufferType, Context,
     Equation, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
 };
-
-// This is exact copy of egui::Vertex,  but with #[repr(C)]
-// TODO: consider making a PR instead
-#[derive(Clone, Copy, Debug, Default)]
-#[repr(C)]
-pub struct Vertex {
-    pub pos: (f32, f32),
-    pub uv: (u16, u16),
-    pub color: (u8, u8, u8, u8),
-}
 
 pub struct Painter {
     pipeline: Pipeline,
@@ -36,7 +26,7 @@ impl Painter {
             &[BufferLayout::default()],
             &[
                 VertexAttribute::new("a_pos", VertexFormat::Float2),
-                VertexAttribute::new("a_tc", VertexFormat::Short2),
+                VertexAttribute::new("a_tc", VertexFormat::Float2),
                 VertexAttribute::new("a_color", VertexFormat::Byte4),
             ],
             shader.expect("couldn't make shader"),
@@ -78,7 +68,7 @@ impl Painter {
     }
 
     fn rebuild_texture(&mut self, ctx: &mut Context, texture: &Texture) {
-        self.texture_hash = texture.id;
+        self.texture_hash = texture.version;
 
         self.bindings.images[0].delete();
 
@@ -102,7 +92,7 @@ impl Painter {
     }
 
     pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
-        if texture.id != self.texture_hash {
+        if texture.version != self.texture_hash {
             self.rebuild_texture(ctx, texture);
         }
 
@@ -112,8 +102,6 @@ impl Painter {
     }
 
     pub fn paint_job(&mut self, ctx: &mut Context, (clip_rect, mesh): PaintJob) {
-        let texture = self.bindings.images[0];
-
         if self.vertex_buffer_size < mesh.vertices.len() {
             self.vertex_buffer_size = mesh.vertices.len();
             self.bindings.vertex_buffers[0].delete();
@@ -133,17 +121,7 @@ impl Painter {
             );
         }
 
-        // TODO: make a PR with repr(c) on Vertex and just use "mesh.vertices"
-        let vertices = mesh
-            .vertices
-            .iter()
-            .map(|x| Vertex {
-                pos: (x.pos.x, x.pos.y),
-                uv: x.uv,
-                color: (x.color.0[0], x.color.0[1], x.color.0[2], x.color.0[3]),
-            })
-            .collect::<Vec<Vertex>>();
-        self.bindings.vertex_buffers[0].update(ctx, &vertices);
+        self.bindings.vertex_buffers[0].update(ctx, &mesh.vertices);
 
         // TODO: support u32 indices in miniquad and just use "mesh.indices"
         for mesh in mesh.split_to_u16() {
@@ -177,10 +155,7 @@ impl Painter {
                 (clip_max_y - clip_min_y) as i32,
             );
             ctx.apply_bindings(&self.bindings);
-            ctx.apply_uniforms(&shader::Uniforms {
-                screen_size,
-                tex_size: (texture.width as f32, texture.height as f32),
-            });
+            ctx.apply_uniforms(&shader::Uniforms { screen_size });
             ctx.draw(0, mesh.indices.len() as i32, 1);
             ctx.end_render_pass();
             ctx.commit_frame();
@@ -193,7 +168,6 @@ mod shader {
 
     pub const VERTEX: &str = r#"#version 100
     uniform vec2 u_screen_size;
-    uniform vec2 u_tex_size;
 
     attribute vec2 a_pos;
     attribute vec2 a_tc;
@@ -209,7 +183,7 @@ mod shader {
             0.0,
             1.0);
 
-        v_tc = a_tc / u_tex_size;
+        v_tc = a_tc;
         v_color = a_color / 255.0;
     }"#;
 
@@ -228,10 +202,7 @@ mod shader {
         ShaderMeta {
             images: vec![],
             uniforms: UniformBlockLayout {
-                uniforms: vec![
-                    UniformDesc::new("u_screen_size", UniformType::Float2),
-                    UniformDesc::new("u_tex_size", UniformType::Float2),
-                ],
+                uniforms: vec![UniformDesc::new("u_screen_size", UniformType::Float2)],
             },
         }
     }
@@ -240,6 +211,5 @@ mod shader {
     #[derive(Debug)]
     pub struct Uniforms {
         pub screen_size: (f32, f32),
-        pub tex_size: (f32, f32),
     }
 }

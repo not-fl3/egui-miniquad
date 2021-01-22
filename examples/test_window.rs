@@ -6,7 +6,7 @@ use {
 };
 
 struct Stage {
-    egui_ctx: std::sync::Arc<egui::Context>,
+    egui_ctx: egui::CtxRef,
     raw_input: egui::RawInput,
     start_time: Instant,
     painter: Painter,
@@ -16,7 +16,10 @@ impl EventHandler for Stage {
     fn update(&mut self, _ctx: &mut Context) {}
 
     fn resize_event(&mut self, _ctx: &mut Context, width: f32, height: f32) {
-        self.raw_input.screen_size = vec2(width, height);
+        self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
+            Default::default(),
+            egui::vec2(width, height),
+        ));
     }
 
     fn mouse_button_down_event(
@@ -48,12 +51,12 @@ impl EventHandler for Stage {
         ctx.end_render_pass();
 
         // TODO: give all of the raw_input information egui wants so everything works properly
-        self.raw_input.time = self.start_time.elapsed().as_nanos() as f64 * 1e-9;
+        self.raw_input.time = Some(self.start_time.elapsed().as_nanos() as f64 * 1e-9);
 
-        let ui = self.egui_ctx.begin_frame(self.raw_input.take());
+        self.egui_ctx.begin_frame(self.raw_input.take());
         egui::Window::new("Debug")
             .default_size(vec2(200.0, 100.0))
-            .show(ui.ctx(), |ui| {
+            .show(&self.egui_ctx, |ui| {
                 ui.add(egui::Label::new("Egui on Miniquad").text_style(egui::TextStyle::Heading));
                 ui.separator();
                 ui.label("Woooohoooo!");
@@ -62,9 +65,11 @@ impl EventHandler for Stage {
                 }
             });
         // TODO: handle this output so that hyperlinks, etc. work
-        let (_, paint_jobs) = self.egui_ctx.end_frame();
+        let (_, shapes) = self.egui_ctx.end_frame();
+        let paint_jobs = self.egui_ctx.tessellate(shapes);
 
-        self.painter.paint(ctx, paint_jobs, self.egui_ctx.texture());
+        self.painter
+            .paint(ctx, paint_jobs, &self.egui_ctx.texture());
     }
 }
 
@@ -72,14 +77,14 @@ fn main() {
     miniquad::start(conf::Conf::default(), |mut ctx| {
         mq::UserData::owning(
             {
-                let egui_ctx = egui::Context::new();
+                let egui_ctx = egui::CtxRef::default();
 
                 let pixels_per_point = ctx.dpi_scale();
                 let (width, height) = ctx.screen_size();
                 let screen_size = vec2(width as f32, height as f32) / pixels_per_point;
 
                 let raw_input = egui::RawInput {
-                    screen_size,
+                    screen_rect: Some(egui::Rect::from_min_size(Default::default(), screen_size)),
                     pixels_per_point: Some(pixels_per_point),
                     ..Default::default()
                 };
