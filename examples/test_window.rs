@@ -12,6 +12,29 @@ struct Stage {
     painter: Painter,
 }
 
+impl Stage {
+    fn new(ctx: &mut mq::Context) -> Self {
+        let egui_ctx = egui::CtxRef::default();
+
+        let pixels_per_point = ctx.dpi_scale();
+        let (width, height) = ctx.screen_size();
+        let screen_size = vec2(width as f32, height as f32) / pixels_per_point;
+
+        let raw_input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(Default::default(), screen_size)),
+            pixels_per_point: Some(pixels_per_point),
+            ..Default::default()
+        };
+
+        Self {
+            egui_ctx,
+            painter: Painter::new(ctx),
+            raw_input,
+            start_time: Instant::now(),
+        }
+    }
+}
+
 impl EventHandler for Stage {
     fn update(&mut self, _ctx: &mut Context) {}
 
@@ -75,28 +98,6 @@ impl EventHandler for Stage {
 
 fn main() {
     miniquad::start(conf::Conf::default(), |mut ctx| {
-        mq::UserData::owning(
-            {
-                let egui_ctx = egui::CtxRef::default();
-
-                let pixels_per_point = ctx.dpi_scale();
-                let (width, height) = ctx.screen_size();
-                let screen_size = vec2(width as f32, height as f32) / pixels_per_point;
-
-                let raw_input = egui::RawInput {
-                    screen_rect: Some(egui::Rect::from_min_size(Default::default(), screen_size)),
-                    pixels_per_point: Some(pixels_per_point),
-                    ..Default::default()
-                };
-
-                Stage {
-                    egui_ctx,
-                    painter: Painter::new(&mut ctx),
-                    raw_input,
-                    start_time: Instant::now(),
-                }
-            },
-            ctx,
-        )
+        mq::UserData::owning(Stage::new(&mut ctx), ctx)
     });
 }
