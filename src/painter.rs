@@ -1,8 +1,12 @@
-use egui::{paint::tessellator::{PaintJob, PaintJobs}, Texture, math::clamp};
+use egui::{
+    math::clamp,
+    paint::tessellator::{PaintJob, PaintJobs},
+    Texture,
+};
 
 use miniquad::{
-    Bindings, BlendFactor, BlendValue, BlendState, Buffer, BufferLayout, BufferType, Context, Equation,
-    Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
+    Bindings, BlendFactor, BlendState, BlendValue, Buffer, BufferLayout, BufferType, Context,
+    Equation, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
 };
 
 // This is exact copy of egui::Vertex,  but with #[repr(C)]
@@ -97,7 +101,6 @@ impl Painter {
         );
     }
 
-
     pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
         if texture.id != self.texture_hash {
             self.rebuild_texture(ctx, texture);
@@ -184,7 +187,7 @@ impl Painter {
 }
 
 mod shader {
-    use miniquad::{ShaderMeta, UniformBlockLayout, UniformType, UniformDesc};
+    use miniquad::{ShaderMeta, UniformBlockLayout, UniformDesc, UniformType};
 
     pub const VERTEX: &str = r#"#version 100
     uniform vec2 u_screen_size;
