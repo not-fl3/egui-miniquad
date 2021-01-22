@@ -199,7 +199,8 @@ mod shader {
     varying vec4 v_color;
     void main() {
         gl_FragColor = v_color;
-        gl_FragColor.a *= texture2D(u_sampler, v_tc).g;
+        // gl_FragColor *= texture2D(u_sampler, v_tc); // TODO: this is what we *should* do, but the texture is always black on my mac
+        gl_FragColor.r *= texture2D(u_sampler, v_tc).r;
     }
     "#;
 
