@@ -97,7 +97,11 @@ impl EventHandler for Stage {
 }
 
 fn main() {
-    miniquad::start(conf::Conf::default(), |mut ctx| {
+    let conf = conf::Conf {
+        // high_dpi: true, // TODO after https://github.com/not-fl3/miniquad/issues/169 is fixed
+        ..Default::default()
+    };
+    miniquad::start(conf, |mut ctx| {
         mq::UserData::owning(Stage::new(&mut ctx), ctx)
     });
 }
