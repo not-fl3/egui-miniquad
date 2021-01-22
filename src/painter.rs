@@ -98,9 +98,14 @@ impl Painter {
             self.rebuild_texture(ctx, texture);
         }
 
+        ctx.begin_default_pass(miniquad::PassAction::Nothing);
+
         for paint_job in jobs {
             self.paint_job(ctx, paint_job);
         }
+
+        ctx.end_render_pass();
+        ctx.commit_frame();
     }
 
     pub fn paint_job(&mut self, ctx: &mut Context, (clip_rect, mesh): PaintJob) {
@@ -125,16 +130,16 @@ impl Painter {
 
         self.bindings.vertex_buffers[0].update(ctx, &mesh.vertices);
 
+        let screen_size = ctx.screen_size();
+
         // TODO: support u32 indices in miniquad and just use "mesh.indices"
         for mesh in mesh.split_to_u16() {
             let indices = mesh.indices.iter().map(|x| *x as u16).collect::<Vec<u16>>();
             self.bindings.index_buffer.update(ctx, &indices);
 
-            let screen_size = ctx.screen_size();
-            ctx.begin_default_pass(miniquad::PassAction::Nothing);
             ctx.apply_pipeline(&self.pipeline);
 
-            let (width_pixels, height_pixels) = ctx.screen_size();
+            let (width_pixels, height_pixels) = screen_size;
             // https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L276
             let pixels_per_point = ctx.dpi_scale();
             let clip_min_x = pixels_per_point * clip_rect.min.x;
@@ -159,8 +164,6 @@ impl Painter {
             ctx.apply_bindings(&self.bindings);
             ctx.apply_uniforms(&shader::Uniforms { screen_size });
             ctx.draw(0, mesh.indices.len() as i32, 1);
-            ctx.end_render_pass();
-            ctx.commit_frame();
         }
     }
 }
