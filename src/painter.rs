@@ -33,7 +33,7 @@ impl Painter {
             PipelineParams {
                 color_blend: Some(BlendState::new(
                     Equation::Add,
-                    BlendFactor::Value(BlendValue::SourceAlpha),
+                    BlendFactor::One,
                     BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
                 )),
                 ..Default::default()
