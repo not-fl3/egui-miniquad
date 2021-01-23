@@ -7,7 +7,6 @@ use {
 struct Stage {
     egui_ctx: egui::CtxRef,
     raw_input: egui::RawInput,
-    start_time: f64,
     painter: Painter,
 }
 
@@ -29,7 +28,6 @@ impl Stage {
             egui_ctx,
             painter: Painter::new(ctx),
             raw_input,
-            start_time: miniquad::date::now(),
         }
     }
 }
@@ -73,7 +71,7 @@ impl EventHandler for Stage {
         ctx.end_render_pass();
 
         // TODO: give all of the raw_input information egui wants so everything works properly
-        self.raw_input.time = Some(miniquad::date::now() - self.start_time);
+        self.raw_input.time = Some(miniquad::date::now());
 
         self.egui_ctx.begin_frame(self.raw_input.take());
         egui::Window::new("Debug")
