@@ -137,8 +137,15 @@ impl Painter {
         );
 
         // TODO: support u32 indices in miniquad and just use "mesh.indices"
-        for mesh in mesh.split_to_u16() {
-            let indices = mesh.indices.iter().map(|x| *x as u16).collect::<Vec<u16>>();
+        let meshes = mesh.split_to_u16();
+        for mesh in meshes {
+            assert!(mesh.is_valid());
+            use std::convert::TryFrom;
+            let indices: Vec<u16> = mesh
+                .indices
+                .iter()
+                .map(|&x| u16::try_from(x).unwrap())
+                .collect();
             self.bindings.index_buffer.update(ctx, &indices);
 
             ctx.apply_pipeline(&self.pipeline);
