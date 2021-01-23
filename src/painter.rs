@@ -12,9 +12,7 @@ use miniquad::{
 pub struct Painter {
     pipeline: Pipeline,
     bindings: Bindings,
-    vertex_buffer_size: usize,
-    index_buffer_size: usize,
-    texture_hash: u64,
+    egui_texture_version: u64,
 }
 
 impl Painter {
@@ -40,17 +38,15 @@ impl Painter {
             },
         );
 
-        let vertex_buffer_size = 10 * 1024;
         let vertex_buffer = Buffer::stream(
             ctx,
             BufferType::VertexBuffer,
-            vertex_buffer_size * std::mem::size_of::<Vertex>(),
+            32 * 1024 * std::mem::size_of::<Vertex>(),
         );
-        let index_buffer_size = 10 * 1024;
         let index_buffer = Buffer::stream(
             ctx,
             BufferType::IndexBuffer,
-            index_buffer_size * std::mem::size_of::<u16>(),
+            32 * 1024 * std::mem::size_of::<u16>(),
         );
         let bindings = Bindings {
             vertex_buffers: vec![vertex_buffer],
@@ -61,15 +57,11 @@ impl Painter {
         Painter {
             pipeline,
             bindings,
-            vertex_buffer_size,
-            index_buffer_size,
-            texture_hash: 0,
+            egui_texture_version: 0,
         }
     }
 
-    fn rebuild_texture(&mut self, ctx: &mut Context, texture: &Texture) {
-        self.texture_hash = texture.version;
-
+    fn rebuild_egui_texture(&mut self, ctx: &mut Context, texture: &Texture) {
         self.bindings.images[0].delete();
 
         let mut texture_data = Vec::new();
@@ -94,11 +86,22 @@ impl Painter {
     }
 
     pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
-        if texture.version != self.texture_hash {
-            self.rebuild_texture(ctx, texture);
+        if texture.version != self.egui_texture_version {
+            self.rebuild_egui_texture(ctx, texture);
+            self.egui_texture_version = texture.version;
         }
 
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
+        ctx.apply_pipeline(&self.pipeline);
+
+        let screen_size_in_pixels = ctx.screen_size();
+        let screen_size_in_points = (
+            screen_size_in_pixels.0 / ctx.dpi_scale(),
+            screen_size_in_pixels.1 / ctx.dpi_scale(),
+        );
+        ctx.apply_uniforms(&shader::Uniforms {
+            u_screen_size: screen_size_in_points,
+        });
 
         for paint_job in jobs {
             self.paint_job(ctx, paint_job);
@@ -109,34 +112,10 @@ impl Painter {
     }
 
     pub fn paint_job(&mut self, ctx: &mut Context, (clip_rect, mesh): PaintJob) {
-        if self.vertex_buffer_size < mesh.vertices.len() {
-            self.vertex_buffer_size = mesh.vertices.len();
-            self.bindings.vertex_buffers[0].delete();
-            self.bindings.vertex_buffers[0] = Buffer::stream(
-                ctx,
-                BufferType::VertexBuffer,
-                self.vertex_buffer_size * std::mem::size_of::<Vertex>(),
-            );
-        }
-        if self.index_buffer_size < mesh.indices.len() {
-            self.index_buffer_size = mesh.indices.len();
-            self.bindings.index_buffer.delete();
-            self.bindings.index_buffer = Buffer::stream(
-                ctx,
-                BufferType::IndexBuffer,
-                self.index_buffer_size * std::mem::size_of::<u16>(),
-            );
-        }
-
-        self.bindings.vertex_buffers[0].update(ctx, &mesh.vertices);
-
         let screen_size_in_pixels = ctx.screen_size();
-        let screen_size_in_points = (
-            screen_size_in_pixels.0 / ctx.dpi_scale(),
-            screen_size_in_pixels.1 / ctx.dpi_scale(),
-        );
+        let pixels_per_point = ctx.dpi_scale();
 
-        // TODO: support u32 indices in miniquad and just use "mesh.indices"
+        // TODO: support u32 indices in miniquad and just use "mesh.indices" without a need for `split_to_u16`
         let meshes = mesh.split_to_u16();
         for mesh in meshes {
             assert!(mesh.is_valid());
@@ -146,12 +125,24 @@ impl Painter {
                 .iter()
                 .map(|&x| u16::try_from(x).unwrap())
                 .collect();
+
+            let vertices_size_bytes = mesh.vertices.len() * std::mem::size_of::<Vertex>();
+            if self.bindings.vertex_buffers[0].size() < vertices_size_bytes {
+                self.bindings.vertex_buffers[0].delete();
+                self.bindings.vertex_buffers[0] =
+                    Buffer::stream(ctx, BufferType::VertexBuffer, vertices_size_bytes);
+            }
+            self.bindings.vertex_buffers[0].update(ctx, &mesh.vertices);
+
+            let indices_size_bytes = indices.len() * std::mem::size_of::<u16>();
+            if self.bindings.index_buffer.size() < indices_size_bytes {
+                self.bindings.index_buffer.delete();
+                self.bindings.index_buffer =
+                    Buffer::stream(ctx, BufferType::IndexBuffer, indices_size_bytes);
+            }
             self.bindings.index_buffer.update(ctx, &indices);
 
-            ctx.apply_pipeline(&self.pipeline);
-
             let (width_in_pixels, height_in_pixels) = screen_size_in_pixels;
-            let pixels_per_point = ctx.dpi_scale();
 
             // From https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L233
 
@@ -179,9 +170,6 @@ impl Painter {
                 (clip_max_y - clip_min_y) as i32,
             );
             ctx.apply_bindings(&self.bindings);
-            ctx.apply_uniforms(&shader::Uniforms {
-                u_screen_size: screen_size_in_points,
-            });
             ctx.draw(0, mesh.indices.len() as i32, 1);
         }
     }
