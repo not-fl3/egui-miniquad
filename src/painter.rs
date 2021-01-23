@@ -108,7 +108,6 @@ impl Painter {
         }
 
         ctx.end_render_pass();
-        ctx.commit_frame();
     }
 
     pub fn paint_job(&mut self, ctx: &mut Context, (clip_rect, mesh): PaintJob) {
