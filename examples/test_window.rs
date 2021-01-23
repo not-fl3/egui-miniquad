@@ -61,8 +61,9 @@ impl EventHandler for Stage {
         self.raw_input.mouse_down = false;
     }
 
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32) {
-        self.raw_input.mouse_pos = Some(pos2(x as f32, y as f32));
+    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32) {
+        self.raw_input.mouse_pos =
+            Some(pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale()));
     }
 
     fn draw(&mut self, ctx: &mut Context) {
@@ -95,7 +96,7 @@ impl EventHandler for Stage {
 
 fn main() {
     let conf = conf::Conf {
-        // high_dpi: true, // TODO after https://github.com/not-fl3/miniquad/issues/169 is fixed
+        high_dpi: true,
         ..Default::default()
     };
     miniquad::start(conf, |mut ctx| {

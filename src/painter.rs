@@ -130,7 +130,11 @@ impl Painter {
 
         self.bindings.vertex_buffers[0].update(ctx, &mesh.vertices);
 
-        let screen_size = ctx.screen_size();
+        let screen_size_in_pixels = ctx.screen_size();
+        let screen_size_in_points = (
+            screen_size_in_pixels.0 / ctx.dpi_scale(),
+            screen_size_in_pixels.1 / ctx.dpi_scale(),
+        );
 
         // TODO: support u32 indices in miniquad and just use "mesh.indices"
         for mesh in mesh.split_to_u16() {
@@ -139,17 +143,23 @@ impl Painter {
 
             ctx.apply_pipeline(&self.pipeline);
 
-            let (width_pixels, height_pixels) = screen_size;
-            // https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L276
+            let (width_in_pixels, height_in_pixels) = screen_size_in_pixels;
             let pixels_per_point = ctx.dpi_scale();
+
+            // From https://github.com/emilk/egui/blob/master/egui_glium/src/painter.rs#L233
+
+            // Transform clip rect to physical pixels:
             let clip_min_x = pixels_per_point * clip_rect.min.x;
             let clip_min_y = pixels_per_point * clip_rect.min.y;
             let clip_max_x = pixels_per_point * clip_rect.max.x;
             let clip_max_y = pixels_per_point * clip_rect.max.y;
-            let clip_min_x = clamp(clip_min_x, 0.0..=width_pixels as f32);
-            let clip_min_y = clamp(clip_min_y, 0.0..=height_pixels as f32);
-            let clip_max_x = clamp(clip_max_x, clip_min_x..=width_pixels as f32);
-            let clip_max_y = clamp(clip_max_y, clip_min_y..=height_pixels as f32);
+
+            // Make sure clip rect can fit withing an `u32`:
+            let clip_min_x = clamp(clip_min_x, 0.0..=width_in_pixels as f32);
+            let clip_min_y = clamp(clip_min_y, 0.0..=height_in_pixels as f32);
+            let clip_max_x = clamp(clip_max_x, clip_min_x..=width_in_pixels as f32);
+            let clip_max_y = clamp(clip_max_y, clip_min_y..=height_in_pixels as f32);
+
             let clip_min_x = clip_min_x.round() as u32;
             let clip_min_y = clip_min_y.round() as u32;
             let clip_max_x = clip_max_x.round() as u32;
@@ -157,12 +167,14 @@ impl Painter {
 
             ctx.apply_scissor_rect(
                 clip_min_x as i32,
-                (height_pixels as u32 - clip_max_y) as i32,
+                (height_in_pixels as u32 - clip_max_y) as i32,
                 (clip_max_x - clip_min_x) as i32,
                 (clip_max_y - clip_min_y) as i32,
             );
             ctx.apply_bindings(&self.bindings);
-            ctx.apply_uniforms(&shader::Uniforms { screen_size });
+            ctx.apply_uniforms(&shader::Uniforms {
+                u_screen_size: screen_size_in_points,
+            });
             ctx.draw(0, mesh.indices.len() as i32, 1);
         }
     }
@@ -267,6 +279,6 @@ mod shader {
     #[repr(C)]
     #[derive(Debug)]
     pub struct Uniforms {
-        pub screen_size: (f32, f32),
+        pub u_screen_size: (f32, f32),
     }
 }
