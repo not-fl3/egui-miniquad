@@ -5,6 +5,7 @@ authors = ["Logachev Fedor <not.fl3@gmail.com >"]
 edition = "2018"
 
 [dependencies]
+clipboard = "0.5"
 egui = "0.8.0"
 miniquad = { version = "=0.3.0-alpha.26" }
 
