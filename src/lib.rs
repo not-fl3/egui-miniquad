@@ -47,10 +47,16 @@ impl EguiMq {
 
         let egui::Output {
             cursor_icon: _, // https://github.com/not-fl3/miniquad/issues/171
-            open_url: _,    // TODO: open hyperlinks
+            open_url,
             copied_text,
             needs_repaint: _, // miniquad always runs at full framerate
         } = output;
+
+        if let Some(url) = open_url {
+            if let Err(err) = webbrowser::open(&url) {
+                eprintln!("Failed to open url: {}", err);
+            }
+        }
 
         if !copied_text.is_empty() {
             self.set_clipboard(mq_ctx, copied_text);
