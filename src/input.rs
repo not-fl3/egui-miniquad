@@ -13,46 +13,11 @@ pub fn on_frame_start(egui_input: &mut egui::RawInput, mq_ctx: &mq::Context) {
     egui_input.time = Some(mq::date::now());
 }
 
-/// Pass on miniquad key event to egui
-pub fn char_event(egui_input: &mut egui::RawInput, chr: char) {
-    if is_printable_char(chr) {
-        egui_input.events.push(egui::Event::Text(chr.to_string()));
-    }
-}
-
-/// Pass on miniquad key event to egui
-pub fn key_down_event(egui_input: &mut egui::RawInput, keycode: mq::KeyCode, keymods: mq::KeyMods) {
-    key_event(egui_input, keycode, keymods, true)
-}
-
-/// Pass on miniquad key event to egui
-pub fn key_up_event(egui_input: &mut egui::RawInput, keycode: mq::KeyCode, keymods: mq::KeyMods) {
-    key_event(egui_input, keycode, keymods, false)
-}
-
-/// Pass on miniquad key event to egui
-fn key_event(
-    egui_input: &mut egui::RawInput,
-    keycode: mq::KeyCode,
-    keymods: mq::KeyMods,
-    pressed: bool,
-) {
-    let modifiers = egui_modifiers_from_mq_modifiers(keymods);
-    egui_input.modifiers = modifiers;
-    if let Some(key) = egui_key_from_mq_key(keycode) {
-        egui_input.events.push(egui::Event::Key {
-            key,
-            pressed,
-            modifiers,
-        })
-    }
-}
-
 /// miniquad sends special keys (backspace, delete, F1, ...) as characters.
 /// Ignore those.
 /// We also ignore '\r', '\n', '\t'.
 /// Newlines are handled by the `Key::Enter` event.
-fn is_printable_char(chr: char) -> bool {
+pub fn is_printable_char(chr: char) -> bool {
     let is_in_private_use_area = '\u{e000}' <= chr && chr <= '\u{f8ff}'
         || '\u{f0000}' <= chr && chr <= '\u{ffffd}'
         || '\u{100000}' <= chr && chr <= '\u{10fffd}';
@@ -60,7 +25,7 @@ fn is_printable_char(chr: char) -> bool {
     !is_in_private_use_area && !chr.is_ascii_control()
 }
 
-fn egui_modifiers_from_mq_modifiers(keymods: mq::KeyMods) -> egui::Modifiers {
+pub fn egui_modifiers_from_mq_modifiers(keymods: mq::KeyMods) -> egui::Modifiers {
     egui::Modifiers {
         alt: keymods.alt,
         ctrl: keymods.ctrl,
@@ -74,7 +39,7 @@ fn egui_modifiers_from_mq_modifiers(keymods: mq::KeyMods) -> egui::Modifiers {
     }
 }
 
-fn egui_key_from_mq_key(key: mq::KeyCode) -> Option<egui::Key> {
+pub fn egui_key_from_mq_key(key: mq::KeyCode) -> Option<egui::Key> {
     Some(match key {
         mq::KeyCode::Down => egui::Key::ArrowDown,
         mq::KeyCode::Left => egui::Key::ArrowLeft,

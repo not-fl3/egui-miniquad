@@ -5,11 +5,14 @@ mod painter;
 
 use miniquad as mq;
 
+use clipboard::ClipboardProvider;
+
 /// egui bindings for miniquad
 pub struct EguiMq {
     egui_ctx: egui::CtxRef,
     egui_input: egui::RawInput,
     painter: painter::Painter,
+    clipboard: Option<clipboard::ClipboardContext>,
 }
 
 impl EguiMq {
@@ -18,6 +21,7 @@ impl EguiMq {
             egui_ctx: egui::CtxRef::default(),
             painter: painter::Painter::new(mq_ctx),
             egui_input: Default::default(),
+            clipboard: init_clipboard(),
         }
     }
 
@@ -35,9 +39,23 @@ impl EguiMq {
 
     /// Call this at the end of each `draw` call.
     pub fn end_frame(&mut self, mq_ctx: &mut mq::Context) {
-        // TODO: handle this output so that hyperlinks, etc. work
-        let (_output, shapes) = self.egui_ctx.end_frame();
+        let (output, shapes) = self.egui_ctx.end_frame();
         let paint_jobs = self.egui_ctx.tessellate(shapes);
+
+        let egui::Output {
+            cursor_icon: _, // https://github.com/not-fl3/miniquad/issues/171
+            open_url: _,    // TODO: open hyperlinks
+            copied_text,
+            needs_repaint: _, // miniquad always runs at full framerate
+        } = output;
+
+        if !copied_text.is_empty() {
+            if let Some(clipboard) = &mut self.clipboard {
+                if let Err(err) = clipboard.set_contents(copied_text) {
+                    eprintln!("Copy/Cut error: {}", err);
+                }
+            }
+        }
 
         self.painter
             .paint(mq_ctx, paint_jobs, &self.egui_ctx.texture());
@@ -62,15 +80,64 @@ impl EguiMq {
         self.egui_input.mouse_down = false;
     }
 
-    pub fn char_event(&mut self, character: char) {
-        input::char_event(&mut self.egui_input, character);
+    pub fn char_event(&mut self, chr: char) {
+        if input::is_printable_char(chr)
+            && !self.egui_input.modifiers.ctrl
+            && !self.egui_input.modifiers.mac_cmd
+        {
+            self.egui_input
+                .events
+                .push(egui::Event::Text(chr.to_string()));
+        }
     }
 
     pub fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
-        input::key_down_event(&mut self.egui_input, keycode, keymods);
+        let modifiers = input::egui_modifiers_from_mq_modifiers(keymods);
+        self.egui_input.modifiers = modifiers;
+
+        if modifiers.command && keycode == mq::KeyCode::X {
+            self.egui_input.events.push(egui::Event::Cut);
+        } else if modifiers.command && keycode == mq::KeyCode::C {
+            self.egui_input.events.push(egui::Event::Copy);
+        } else if modifiers.command && keycode == mq::KeyCode::V {
+            if let Some(clipboard) = &mut self.clipboard {
+                match clipboard.get_contents() {
+                    Ok(contents) => {
+                        self.egui_input.events.push(egui::Event::Text(contents));
+                    }
+                    Err(err) => {
+                        eprintln!("Paste error: {}", err);
+                    }
+                }
+            }
+        } else if let Some(key) = input::egui_key_from_mq_key(keycode) {
+            self.egui_input.events.push(egui::Event::Key {
+                key,
+                pressed: true,
+                modifiers,
+            })
+        }
     }
 
     pub fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
-        input::key_up_event(&mut self.egui_input, keycode, keymods);
+        let modifiers = input::egui_modifiers_from_mq_modifiers(keymods);
+        self.egui_input.modifiers = modifiers;
+        if let Some(key) = input::egui_key_from_mq_key(keycode) {
+            self.egui_input.events.push(egui::Event::Key {
+                key,
+                pressed: false,
+                modifiers,
+            })
+        }
+    }
+}
+
+fn init_clipboard() -> Option<clipboard::ClipboardContext> {
+    match clipboard::ClipboardContext::new() {
+        Ok(clipboard) => Some(clipboard),
+        Err(err) => {
+            eprintln!("Failed to initialize clipboard: {}", err);
+            None
+        }
     }
 }
