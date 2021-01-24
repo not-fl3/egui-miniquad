@@ -99,12 +99,12 @@ impl mq::EventHandler for Stage {
 
     fn key_down_event(
         &mut self,
-        _ctx: &mut mq::Context,
+        ctx: &mut mq::Context,
         keycode: mq::KeyCode,
         keymods: mq::KeyMods,
         _repeat: bool,
     ) {
-        self.egui_mq.key_down_event(keycode, keymods);
+        self.egui_mq.key_down_event(ctx, keycode, keymods);
     }
 
     fn key_up_event(&mut self, _ctx: &mut mq::Context, keycode: mq::KeyCode, keymods: mq::KeyMods) {
