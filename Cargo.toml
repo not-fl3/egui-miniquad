@@ -5,9 +5,12 @@ authors = ["Logachev Fedor <not.fl3@gmail.com >"]
 edition = "2018"
 
 [dependencies]
-clipboard = "0.5"
 egui = "0.8.0"
 miniquad = { version = "=0.3.0-alpha.26" }
+
+# https://github.com/not-fl3/miniquad/issues/172
+[target.'cfg(target_os = "macos")'.dependencies]
+clipboard = "0.5"
 
 [dev-dependencies]
 egui_demo_lib = "0.8.1" # For example
