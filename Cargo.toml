@@ -5,11 +5,8 @@ authors = ["Logachev Fedor <not.fl3@gmail.com >"]
 edition = "2018"
 
 [dependencies]
-miniquad = { version = "=0.3.0-alpha.25" }
 egui = "0.8.0"
+miniquad = { version = "=0.3.0-alpha.26" }
 
 [dev-dependencies]
 egui_demo_lib = "0.8.1" # For example
-
-[patch.crates-io]
-miniquad = { git = "https://github.com/not-fl3/miniquad", rev = "eec0d1dce08c49c5420ba81b98b2962d16f3f304" } # 2021-01-23 fix for high-dpi bug on darwin
