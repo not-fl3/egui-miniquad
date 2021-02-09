@@ -33,7 +33,7 @@ impl Stage {
             ui.separator();
             ui.checkbox(show_egui_demo_windows, "Show egui demo windows");
             ui.label("Woooohoooo!");
-            if ui.button("Quit").clicked {
+            if ui.button("Quit").clicked() {
                 std::process::exit(0);
             }
         });
@@ -69,22 +69,22 @@ impl mq::EventHandler for Stage {
 
     fn mouse_button_down_event(
         &mut self,
-        _ctx: &mut mq::Context,
+        ctx: &mut mq::Context,
         mb: mq::MouseButton,
         x: f32,
         y: f32,
     ) {
-        self.egui_mq.mouse_button_down_event(mb, x, y);
+        self.egui_mq.mouse_button_down_event(ctx, mb, x, y);
     }
 
     fn mouse_button_up_event(
         &mut self,
-        _ctx: &mut mq::Context,
+        ctx: &mut mq::Context,
         mb: mq::MouseButton,
         x: f32,
         y: f32,
     ) {
-        self.egui_mq.mouse_button_up_event(mb, x, y);
+        self.egui_mq.mouse_button_up_event(ctx, mb, x, y);
     }
 
     fn char_event(

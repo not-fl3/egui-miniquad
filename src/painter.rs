@@ -1,9 +1,4 @@
-use egui::{
-    math::clamp,
-    paint::{PaintJob, PaintJobs, Vertex},
-    Texture,
-};
-
+use egui::paint::Vertex;
 use miniquad::{
     Bindings, BlendFactor, BlendState, BlendValue, Buffer, BufferLayout, BufferType, Context,
     Equation, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
@@ -61,7 +56,7 @@ impl Painter {
         }
     }
 
-    fn rebuild_egui_texture(&mut self, ctx: &mut Context, texture: &Texture) {
+    fn rebuild_egui_texture(&mut self, ctx: &mut Context, texture: &egui::Texture) {
         self.bindings.images[0].delete();
 
         let mut texture_data = Vec::new();
@@ -85,7 +80,12 @@ impl Painter {
         );
     }
 
-    pub fn paint(&mut self, ctx: &mut Context, jobs: PaintJobs, texture: &Texture) {
+    pub fn paint(
+        &mut self,
+        ctx: &mut Context,
+        meshes: Vec<egui::ClippedMesh>,
+        texture: &egui::Texture,
+    ) {
         if texture.version != self.egui_texture_version {
             self.rebuild_egui_texture(ctx, texture);
             self.egui_texture_version = texture.version;
@@ -103,14 +103,14 @@ impl Painter {
             u_screen_size: screen_size_in_points,
         });
 
-        for paint_job in jobs {
-            self.paint_job(ctx, paint_job);
+        for egui::ClippedMesh(clip_rect, mesh) in meshes {
+            self.paint_job(ctx, clip_rect, mesh);
         }
 
         ctx.end_render_pass();
     }
 
-    pub fn paint_job(&mut self, ctx: &mut Context, (clip_rect, mesh): PaintJob) {
+    pub fn paint_job(&mut self, ctx: &mut Context, clip_rect: egui::Rect, mesh: egui::paint::Mesh) {
         let screen_size_in_pixels = ctx.screen_size();
         let pixels_per_point = ctx.dpi_scale();
 
@@ -152,6 +152,7 @@ impl Painter {
             let clip_max_y = pixels_per_point * clip_rect.max.y;
 
             // Make sure clip rect can fit withing an `u32`:
+            use egui::math::clamp;
             let clip_min_x = clamp(clip_min_x, 0.0..=width_in_pixels as f32);
             let clip_min_y = clamp(clip_min_y, 0.0..=height_in_pixels as f32);
             let clip_max_x = clamp(clip_max_x, clip_min_x..=width_in_pixels as f32);

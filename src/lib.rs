@@ -67,22 +67,47 @@ impl EguiMq {
     }
 
     pub fn mouse_motion_event(&mut self, ctx: &mut mq::Context, x: f32, y: f32) {
-        self.egui_input.mouse_pos = Some(egui::pos2(
-            x as f32 / ctx.dpi_scale(),
-            y as f32 / ctx.dpi_scale(),
-        ));
+        let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
+        self.egui_input.events.push(egui::Event::PointerMoved(pos))
     }
 
     pub fn mouse_wheel_event(&mut self, ctx: &mut mq::Context, dx: f32, dy: f32) {
         self.egui_input.scroll_delta += egui::vec2(dx, dy) * ctx.dpi_scale(); // not quite right speed on Mac for some reason
     }
 
-    pub fn mouse_button_down_event(&mut self, _mb: mq::MouseButton, _x: f32, _y: f32) {
-        self.egui_input.mouse_down = true;
+    pub fn mouse_button_down_event(
+        &mut self,
+        ctx: &mut mq::Context,
+        mb: mq::MouseButton,
+        x: f32,
+        y: f32,
+    ) {
+        let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
+        let button = to_egui_button(mb);
+        self.egui_input.events.push(egui::Event::PointerButton {
+            pos,
+            button,
+            pressed: true,
+            modifiers: self.egui_input.modifiers,
+        })
     }
 
-    pub fn mouse_button_up_event(&mut self, _mb: mq::MouseButton, _x: f32, _y: f32) {
-        self.egui_input.mouse_down = false;
+    pub fn mouse_button_up_event(
+        &mut self,
+        ctx: &mut mq::Context,
+        mb: mq::MouseButton,
+        x: f32,
+        y: f32,
+    ) {
+        let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
+        let button = to_egui_button(mb);
+
+        self.egui_input.events.push(egui::Event::PointerButton {
+            pos,
+            button,
+            pressed: false,
+            modifiers: self.egui_input.modifiers,
+        })
     }
 
     pub fn char_event(&mut self, chr: char) {
@@ -177,5 +202,14 @@ fn init_clipboard() -> Option<clipboard::ClipboardContext> {
             eprintln!("Failed to initialize clipboard: {}", err);
             None
         }
+    }
+}
+
+fn to_egui_button(mb: mq::MouseButton) -> egui::PointerButton {
+    match mb {
+        mq::MouseButton::Left => egui::PointerButton::Primary,
+        mq::MouseButton::Right => egui::PointerButton::Secondary,
+        mq::MouseButton::Middle => egui::PointerButton::Middle,
+        mq::MouseButton::Unknown => egui::PointerButton::Primary,
     }
 }
