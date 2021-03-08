@@ -12,7 +12,12 @@ miniquad = { version = "=0.3.0-alpha.26" }
 [target.'cfg(target_os = "macos")'.dependencies]
 clipboard = "0.5"
 
+# For compiling natively:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 webbrowser = "0.5"
 
 [dev-dependencies]
 egui_demo_lib = "0.10.0" # For example
+
+[profile.release]
+opt-level = 2 # fast and small wasm

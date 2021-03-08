@@ -52,10 +52,15 @@ impl EguiMq {
             needs_repaint: _, // miniquad always runs at full framerate
         } = output;
 
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(url) = open_url {
             if let Err(err) = webbrowser::open(&url) {
                 eprintln!("Failed to open url: {}", err);
             }
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = open_url; // unused // TODO: navigate to web page
         }
 
         if !copied_text.is_empty() {
