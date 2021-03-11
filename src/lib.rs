@@ -53,8 +53,11 @@ impl EguiMq {
         } = output;
 
         if let Some(url) = open_url {
-            if let Err(err) = webbrowser::open(&url) {
-                eprintln!("Failed to open url: {}", err);
+            #[cfg(target_os = "macos")]
+            {
+                if let Err(err) = webbrowser::open(&url) {
+                    eprintln!("Failed to open url: {}", err);
+                }
             }
         }
 
