@@ -10,7 +10,12 @@ pub fn on_frame_start(egui_input: &mut egui::RawInput, mq_ctx: &mq::Context) {
         screen_size_in_points,
     ));
     egui_input.pixels_per_point = Some(pixels_per_point);
-    egui_input.time = Some(mq::date::now());
+
+    // mq::date::now() lies on web
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        egui_input.time = Some(mq::date::now());
+    }
 }
 
 /// miniquad sends special keys (backspace, delete, F1, ...) as characters.
