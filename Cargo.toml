@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 egui = "0.10.0"
-miniquad = { version = "=0.3.0-alpha.26" }
+miniquad = { version = "=0.3.0-alpha.27" }
 
 # https://github.com/not-fl3/miniquad/issues/172
 [target.'cfg(target_os = "macos")'.dependencies]
