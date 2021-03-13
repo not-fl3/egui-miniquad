@@ -1,4 +1,4 @@
-use {emigui_miniquad as egui_mq, miniquad as mq};
+use {egui_miniquad as egui_mq, miniquad as mq};
 
 struct Stage {
     egui_mq: egui_mq::EguiMq,

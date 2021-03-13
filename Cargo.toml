@@ -1,8 +1,21 @@
 [package]
-name = "emigui-miniquad"
+name = "egui-miniquad"
 version = "0.1.0"
-authors = ["Logachev Fedor <not.fl3@gmail.com >"]
+authors = ["Logachev Fedor <not.fl3@gmail.com>", "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
+description = "Bindings between egui and miniquad"
 edition = "2018"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+homepage = "https://github.com/not-fl3/egui-miniquad"
+repository = "https://github.com/not-fl3/egui-miniquad"
+categories = ["gui", "game-development"]
+keywords = ["gui", "imgui", "immediate", "portable", "gamedev"]
+include = [
+  "../LICENSE-APACHE",
+  "../LICENSE-MIT",
+  "**/*.rs",
+  "Cargo.toml",
+]
 
 [dependencies]
 egui = "0.10.0"
