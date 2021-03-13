@@ -4,7 +4,7 @@ set -eu
 
 # FOLDER_NAME=${PWD##*/}
 # CRATE_NAME=$FOLDER_NAME # assume crate name is the same as the folder name
-EXAMPLE_NAME="test_window"
+EXAMPLE_NAME="demo"
 
 rustup target add wasm32-unknown-unknown
 

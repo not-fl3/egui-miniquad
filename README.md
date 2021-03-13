@@ -4,7 +4,7 @@
 
 On Linux you first must run `apt install libx11-dev libxi-dev libgl1-mesa-dev` (miniquad dependencies).
 
-`cargo run --release --example test_winodw`
+`cargo run --release --example demo`
 
 ### Compiling for the web
 
