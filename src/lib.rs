@@ -166,12 +166,12 @@ impl EguiMq {
 
     #[cfg(not(target_os = "macos"))]
     fn set_clipboard(&mut self, mq_ctx: &mut mq::Context, text: String) {
-        mq::copypasta::set(mq_ctx, text.as_str());
+        mq::clipboard::set(mq_ctx, text.as_str());
     }
 
     #[cfg(not(target_os = "macos"))]
     fn get_clipboard(&mut self, mq_ctx: &mut mq::Context) -> Option<String> {
-        mq::copypasta::get(mq_ctx)
+        mq::clipboard::get(mq_ctx)
     }
 
     #[cfg(target_os = "macos")]
