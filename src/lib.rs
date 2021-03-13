@@ -8,7 +8,9 @@ use miniquad as mq;
 #[cfg(target_os = "macos")] // https://github.com/not-fl3/miniquad/issues/172
 use copypasta::ClipboardProvider;
 
-/// egui bindings for miniquad
+/// egui bindings for miniquad.
+///
+///
 pub struct EguiMq {
     egui_ctx: egui::CtxRef,
     egui_input: egui::RawInput,
@@ -29,7 +31,7 @@ impl EguiMq {
     }
 
     /// Use this to open egui windows, panels etc.
-    /// Can only be used between [`Self::begin_frmae`] and [`Self::end_frame`].
+    /// Can only be used between [`Self::begin_frame`] and [`Self::end_frame`].
     pub fn egui_ctx(&self) -> &egui::CtxRef {
         &self.egui_ctx
     }
@@ -41,12 +43,13 @@ impl EguiMq {
     }
 
     /// Call this at the end of each `draw` call.
+    /// This will draw the `egui` interface.
     pub fn end_frame(&mut self, mq_ctx: &mut mq::Context) {
         let (output, shapes) = self.egui_ctx.end_frame();
         let paint_jobs = self.egui_ctx.tessellate(shapes);
 
         let egui::Output {
-            cursor_icon: _, // https://github.com/not-fl3/miniquad/issues/171
+            cursor_icon,
             open_url,
             copied_text,
             needs_repaint: _, // miniquad always runs at full framerate
@@ -63,6 +66,10 @@ impl EguiMq {
             let _ = open_url; // unused // TODO: navigate to web page
         }
 
+        if let Some(mq_cursor_icon) = to_mq_cursor_icon(cursor_icon) {
+            mq_ctx.set_mouse_cursor(mq_cursor_icon)
+        }
+
         if !copied_text.is_empty() {
             self.set_clipboard(mq_ctx, copied_text);
         }
@@ -71,15 +78,18 @@ impl EguiMq {
             .paint(mq_ctx, paint_jobs, &self.egui_ctx.texture());
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_motion_event(&mut self, ctx: &mut mq::Context, x: f32, y: f32) {
         let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
         self.egui_input.events.push(egui::Event::PointerMoved(pos))
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_wheel_event(&mut self, ctx: &mut mq::Context, dx: f32, dy: f32) {
         self.egui_input.scroll_delta += egui::vec2(dx, dy) * ctx.dpi_scale(); // not quite right speed on Mac for some reason
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_button_down_event(
         &mut self,
         ctx: &mut mq::Context,
@@ -97,6 +107,7 @@ impl EguiMq {
         })
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_button_up_event(
         &mut self,
         ctx: &mut mq::Context,
@@ -115,6 +126,7 @@ impl EguiMq {
         })
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn char_event(&mut self, chr: char) {
         if input::is_printable_char(chr)
             && !self.egui_input.modifiers.ctrl
@@ -126,6 +138,7 @@ impl EguiMq {
         }
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn key_down_event(
         &mut self,
         mq_ctx: &mut mq::Context,
@@ -152,6 +165,7 @@ impl EguiMq {
         }
     }
 
+    /// Call from your [`miniquad::EventHandler`].
     pub fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
         let modifiers = input::egui_modifiers_from_mq_modifiers(keymods);
         self.egui_input.modifiers = modifiers;
@@ -216,5 +230,27 @@ fn to_egui_button(mb: mq::MouseButton) -> egui::PointerButton {
         mq::MouseButton::Right => egui::PointerButton::Secondary,
         mq::MouseButton::Middle => egui::PointerButton::Middle,
         mq::MouseButton::Unknown => egui::PointerButton::Primary,
+    }
+}
+
+fn to_mq_cursor_icon(cursor_icon: egui::CursorIcon) -> Option<mq::CursorIcon> {
+    match cursor_icon {
+        egui::CursorIcon::Default => Some(mq::CursorIcon::Default),
+        egui::CursorIcon::PointingHand => Some(mq::CursorIcon::Pointer),
+        egui::CursorIcon::Text => Some(mq::CursorIcon::Text),
+        egui::CursorIcon::ResizeHorizontal => Some(mq::CursorIcon::EWResize),
+        egui::CursorIcon::ResizeVertical => Some(mq::CursorIcon::NSResize),
+        egui::CursorIcon::ResizeNeSw => Some(mq::CursorIcon::NESWResize),
+        egui::CursorIcon::ResizeNwSe => Some(mq::CursorIcon::NWSEResize),
+
+        // cursors supported by miniquad, but not by egui:
+        // egui::CursorIcon::Help => Some(mq::CursorIcon::Help),
+        // egui::CursorIcon::Wait => Some(mq::CursorIcon::Wait),
+        // egui::CursorIcon::Crosshair => Some(mq::CursorIcon::Crosshair),
+        // egui::CursorIcon::Move => Some(mq::CursorIcon::Move),
+        // egui::CursorIcon::NotAllowed => Some(mq::CursorIcon::NotAllowed),
+
+        // Not implemented, see https://github.com/not-fl3/miniquad/pull/173 and https://github.com/not-fl3/miniquad/issues/171
+        egui::CursorIcon::Grab | egui::CursorIcon::Grabbing => None,
     }
 }
