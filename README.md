@@ -2,6 +2,8 @@
 
 ## native
 
+On Linux you first must run `apt install libx11-dev libxi-dev libgl1-mesa-dev` (miniquad dependencies).
+
 `cargo run --release --example test_winodw`
 
 ### Compiling for the web
