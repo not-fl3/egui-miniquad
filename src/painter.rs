@@ -118,13 +118,6 @@ impl Painter {
         let meshes = mesh.split_to_u16();
         for mesh in meshes {
             assert!(mesh.is_valid());
-            use std::convert::TryFrom;
-            let indices: Vec<u16> = mesh
-                .indices
-                .iter()
-                .map(|&x| u16::try_from(x).unwrap())
-                .collect();
-
             let vertices_size_bytes = mesh.vertices.len() * std::mem::size_of::<Vertex>();
             if self.bindings.vertex_buffers[0].size() < vertices_size_bytes {
                 self.bindings.vertex_buffers[0].delete();
@@ -133,13 +126,13 @@ impl Painter {
             }
             self.bindings.vertex_buffers[0].update(ctx, &mesh.vertices);
 
-            let indices_size_bytes = indices.len() * std::mem::size_of::<u16>();
+            let indices_size_bytes = mesh.indices.len() * std::mem::size_of::<u16>();
             if self.bindings.index_buffer.size() < indices_size_bytes {
                 self.bindings.index_buffer.delete();
                 self.bindings.index_buffer =
                     Buffer::stream(ctx, BufferType::IndexBuffer, indices_size_bytes);
             }
-            self.bindings.index_buffer.update(ctx, &indices);
+            self.bindings.index_buffer.update(ctx, &mesh.indices);
 
             let (width_in_pixels, height_in_pixels) = screen_size_in_pixels;
 
