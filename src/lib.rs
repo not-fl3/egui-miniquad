@@ -6,7 +6,7 @@ mod painter;
 use miniquad as mq;
 
 #[cfg(target_os = "macos")] // https://github.com/not-fl3/miniquad/issues/172
-use clipboard::ClipboardProvider;
+use copypasta::ClipboardProvider;
 
 /// egui bindings for miniquad
 pub struct EguiMq {
@@ -14,7 +14,7 @@ pub struct EguiMq {
     egui_input: egui::RawInput,
     painter: painter::Painter,
     #[cfg(target_os = "macos")]
-    clipboard: Option<clipboard::ClipboardContext>,
+    clipboard: Option<copypasta::ClipboardContext>,
 }
 
 impl EguiMq {
@@ -166,12 +166,12 @@ impl EguiMq {
 
     #[cfg(not(target_os = "macos"))]
     fn set_clipboard(&mut self, mq_ctx: &mut mq::Context, text: String) {
-        mq::clipboard::set(mq_ctx, text.as_str());
+        mq::copypasta::set(mq_ctx, text.as_str());
     }
 
     #[cfg(not(target_os = "macos"))]
     fn get_clipboard(&mut self, mq_ctx: &mut mq::Context) -> Option<String> {
-        mq::clipboard::get(mq_ctx)
+        mq::copypasta::get(mq_ctx)
     }
 
     #[cfg(target_os = "macos")]
@@ -200,8 +200,8 @@ impl EguiMq {
 }
 
 #[cfg(target_os = "macos")]
-fn init_clipboard() -> Option<clipboard::ClipboardContext> {
-    match clipboard::ClipboardContext::new() {
+fn init_clipboard() -> Option<copypasta::ClipboardContext> {
+    match copypasta::ClipboardContext::new() {
         Ok(clipboard) => Some(clipboard),
         Err(err) => {
             eprintln!("Failed to initialize clipboard: {}", err);
