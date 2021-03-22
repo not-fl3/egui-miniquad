@@ -13,7 +13,7 @@
 //!     egui_mq: egui_miniquad::EguiMq,
 //! }
 //!
-//! impl Stage {
+//! impl MyMiniquadApp {
 //!     fn new(ctx: &mut mq::Context) -> Self {
 //!         Self {
 //!             egui_mq: egui_miniquad::EguiMq::new(ctx),
@@ -21,13 +21,15 @@
 //!     }
 //!
 //!     fn ui(&mut self) {
-//!         egui::Window::new("Egui Window").show(egui_ctx, |ui| {
+//!         egui::Window::new("Egui Window").show(self.egui_mq.egui_ctx(), |ui| {
 //!             ui.heading("Hello World!");
 //!         });
 //!     }
 //! }
 //!
 //! impl mq::EventHandler for MyMiniquadApp {
+//!     fn update(&mut self, _: &mut mq::Context) {}
+//!
 //!     fn draw(&mut self, ctx: &mut mq::Context) {
 //!         ctx.clear(Some((1., 1., 1., 1.)), None, None);
 //!         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
