@@ -49,11 +49,13 @@ impl mq::EventHandler for Stage {
         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
         ctx.end_render_pass();
 
-        // Draw things behind egui here
-
         self.egui_mq.begin_frame(ctx);
         self.ui();
         self.egui_mq.end_frame(ctx);
+
+        // Draw things behind egui here
+
+        self.egui_mq.draw(ctx);
 
         // Draw things in front of egui here
 

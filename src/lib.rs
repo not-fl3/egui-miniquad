@@ -35,11 +35,13 @@
 //!         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
 //!         ctx.end_render_pass();
 //!
-//!         // Draw things behind egui here
-//!
 //!         self.egui_mq.begin_frame(ctx);
 //!         self.ui();
 //!         self.egui_mq.end_frame(ctx);
+//!
+//!         // Draw things behind egui here
+//!
+//!         self.egui_mq.draw(ctx);
 //!
 //!         // Draw things in front of egui here
 //!
@@ -119,6 +121,7 @@ pub struct EguiMq {
     painter: painter::Painter,
     #[cfg(target_os = "macos")]
     clipboard: Option<copypasta::ClipboardContext>,
+    shapes: Option<Vec<egui::epaint::ClippedShape>>,
 }
 
 impl EguiMq {
@@ -129,6 +132,7 @@ impl EguiMq {
             egui_input: Default::default(),
             #[cfg(target_os = "macos")]
             clipboard: init_clipboard(),
+            shapes: None,
         }
     }
 
@@ -148,7 +152,12 @@ impl EguiMq {
     /// This will draw the `egui` interface.
     pub fn end_frame(&mut self, mq_ctx: &mut mq::Context) {
         let (output, shapes) = self.egui_ctx.end_frame();
-        let paint_jobs = self.egui_ctx.tessellate(shapes);
+        if self.shapes.is_some() {
+            eprintln!(
+                "Egui contents not drawed. You need to call `draw` after calling `end_frame`"
+            );
+        }
+        self.shapes = Some(shapes);
 
         let egui::Output {
             cursor_icon,
@@ -168,9 +177,18 @@ impl EguiMq {
         if !copied_text.is_empty() {
             self.set_clipboard(mq_ctx, copied_text);
         }
+    }
 
-        self.painter
-            .paint(mq_ctx, paint_jobs, &self.egui_ctx.texture());
+    /// Call this when you need to draw egui.
+    /// Must be called after `end_frame`.
+    pub fn draw(&mut self, mq_ctx: &mut mq::Context) {
+        if let Some(shapes) = self.shapes.take() {
+            let paint_jobs = self.egui_ctx.tessellate(shapes);
+            self.painter
+                .paint(mq_ctx, paint_jobs, &self.egui_ctx.texture());
+        } else {
+            eprintln!("Failed to draw egui. You need to call `end_frame` before calling `draw`");
+        }
     }
 
     /// Call from your [`miniquad::EventHandler`].
