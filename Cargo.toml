@@ -19,15 +19,12 @@ include = [
 
 [dependencies]
 egui = "0.10.0"
-miniquad = { version = "=0.3.0-alpha.27" }
+miniquad = { version = "=0.3.0-alpha.28" }
+quad-url = "0.1.0"
 
 # https://github.com/not-fl3/miniquad/issues/172
 [target.'cfg(target_os = "macos")'.dependencies]
 copypasta = "0.7"
-
-# For compiling natively:
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-webbrowser = "0.5"
 
 [dev-dependencies]
 egui_demo_lib = "0.10.0" # For example
