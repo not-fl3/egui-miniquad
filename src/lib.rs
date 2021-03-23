@@ -13,7 +13,7 @@
 //!     egui_mq: egui_miniquad::EguiMq,
 //! }
 //!
-//! impl Stage {
+//! impl MyMiniquadApp {
 //!     fn new(ctx: &mut mq::Context) -> Self {
 //!         Self {
 //!             egui_mq: egui_miniquad::EguiMq::new(ctx),
@@ -21,13 +21,15 @@
 //!     }
 //!
 //!     fn ui(&mut self) {
-//!         egui::Window::new("Egui Window").show(egui_ctx, |ui| {
+//!         egui::Window::new("Egui Window").show(self.egui_mq.egui_ctx(), |ui| {
 //!             ui.heading("Hello World!");
 //!         });
 //!     }
 //! }
 //!
 //! impl mq::EventHandler for MyMiniquadApp {
+//!     fn update(&mut self, _: &mut mq::Context) {}
+//!
 //!     fn draw(&mut self, ctx: &mut mq::Context) {
 //!         ctx.clear(Some((1., 1., 1., 1.)), None, None);
 //!         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
@@ -155,15 +157,8 @@ impl EguiMq {
             needs_repaint: _, // miniquad always runs at full framerate
         } = output;
 
-        #[cfg(not(target_arch = "wasm32"))]
         if let Some(url) = open_url {
-            if let Err(err) = webbrowser::open(&url) {
-                eprintln!("Failed to open url: {}", err);
-            }
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            let _ = open_url; // unused // TODO: navigate to web page
+            quad_url::link_open(&url, false);
         }
 
         if let Some(mq_cursor_icon) = to_mq_cursor_icon(cursor_icon) {
