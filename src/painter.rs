@@ -145,11 +145,10 @@ impl Painter {
             let clip_max_y = pixels_per_point * clip_rect.max.y;
 
             // Make sure clip rect can fit withing an `u32`:
-            use egui::math::clamp;
-            let clip_min_x = clamp(clip_min_x, 0.0..=width_in_pixels as f32);
-            let clip_min_y = clamp(clip_min_y, 0.0..=height_in_pixels as f32);
-            let clip_max_x = clamp(clip_max_x, clip_min_x..=width_in_pixels as f32);
-            let clip_max_y = clamp(clip_max_y, clip_min_y..=height_in_pixels as f32);
+            let clip_min_x = clip_min_x.clamp(0.0, width_in_pixels as f32);
+            let clip_min_y = clip_min_y.clamp(0.0, height_in_pixels as f32);
+            let clip_max_x = clip_max_x.clamp(clip_min_x, width_in_pixels as f32);
+            let clip_max_y = clip_max_y.clamp(clip_min_y, height_in_pixels as f32);
 
             let clip_min_x = clip_min_x.round() as u32;
             let clip_min_y = clip_min_y.round() as u32;

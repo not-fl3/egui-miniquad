@@ -107,6 +107,7 @@ mod painter;
 
 // ----------------------------------------------------------------------------
 
+use egui::CursorIcon;
 use miniquad as mq;
 
 #[cfg(target_os = "macos")] // https://github.com/not-fl3/miniquad/issues/172
@@ -164,14 +165,22 @@ impl EguiMq {
             open_url,
             copied_text,
             needs_repaint: _, // miniquad always runs at full framerate
+            events: _,        // no screen reader
+            text_cursor: _,   // no IME
         } = output;
 
         if let Some(url) = open_url {
-            quad_url::link_open(&url, false);
+            quad_url::link_open(&url.url, url.new_tab);
         }
 
-        if let Some(mq_cursor_icon) = to_mq_cursor_icon(cursor_icon) {
-            mq_ctx.set_mouse_cursor(mq_cursor_icon)
+        if cursor_icon == egui::CursorIcon::None {
+            mq_ctx.show_mouse(false);
+        } else {
+            mq_ctx.show_mouse(true);
+
+            let mq_cursor_icon = to_mq_cursor_icon(cursor_icon);
+            let mq_cursor_icon = mq_cursor_icon.unwrap_or(mq::CursorIcon::Default);
+            mq_ctx.set_mouse_cursor(mq_cursor_icon);
         }
 
         if !copied_text.is_empty() {
@@ -348,6 +357,9 @@ fn to_egui_button(mb: mq::MouseButton) -> egui::PointerButton {
 
 fn to_mq_cursor_icon(cursor_icon: egui::CursorIcon) -> Option<mq::CursorIcon> {
     match cursor_icon {
+        // Handled outside this function
+        CursorIcon::None => None,
+
         egui::CursorIcon::Default => Some(mq::CursorIcon::Default),
         egui::CursorIcon::PointingHand => Some(mq::CursorIcon::Pointer),
         egui::CursorIcon::Text => Some(mq::CursorIcon::Text),
@@ -355,15 +367,27 @@ fn to_mq_cursor_icon(cursor_icon: egui::CursorIcon) -> Option<mq::CursorIcon> {
         egui::CursorIcon::ResizeVertical => Some(mq::CursorIcon::NSResize),
         egui::CursorIcon::ResizeNeSw => Some(mq::CursorIcon::NESWResize),
         egui::CursorIcon::ResizeNwSe => Some(mq::CursorIcon::NWSEResize),
+        egui::CursorIcon::Help => Some(mq::CursorIcon::Help),
+        egui::CursorIcon::Wait => Some(mq::CursorIcon::Wait),
+        egui::CursorIcon::Crosshair => Some(mq::CursorIcon::Crosshair),
+        egui::CursorIcon::Move => Some(mq::CursorIcon::Move),
+        egui::CursorIcon::NotAllowed => Some(mq::CursorIcon::NotAllowed),
 
-        // cursors supported by miniquad, but not by egui:
-        // egui::CursorIcon::Help => Some(mq::CursorIcon::Help),
-        // egui::CursorIcon::Wait => Some(mq::CursorIcon::Wait),
-        // egui::CursorIcon::Crosshair => Some(mq::CursorIcon::Crosshair),
-        // egui::CursorIcon::Move => Some(mq::CursorIcon::Move),
-        // egui::CursorIcon::NotAllowed => Some(mq::CursorIcon::NotAllowed),
+        // Similar enough
+        egui::CursorIcon::AllScroll => Some(mq::CursorIcon::Move),
+        egui::CursorIcon::Progress => Some(mq::CursorIcon::Wait),
 
         // Not implemented, see https://github.com/not-fl3/miniquad/pull/173 and https://github.com/not-fl3/miniquad/issues/171
         egui::CursorIcon::Grab | egui::CursorIcon::Grabbing => None,
+
+        // Also not implemented:
+        egui::CursorIcon::Alias
+        | egui::CursorIcon::Cell
+        | egui::CursorIcon::ContextMenu
+        | egui::CursorIcon::Copy
+        | egui::CursorIcon::NoDrop
+        | egui::CursorIcon::VerticalText
+        | egui::CursorIcon::ZoomIn
+        | egui::CursorIcon::ZoomOut => None,
     }
 }
