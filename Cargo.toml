@@ -1,6 +1,6 @@
 [package]
 name = "egui-miniquad"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Logachev Fedor <not.fl3@gmail.com>", "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
 description = "Bindings between egui and miniquad"
 edition = "2018"
