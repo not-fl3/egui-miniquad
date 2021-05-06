@@ -19,7 +19,7 @@ include = [
 
 [dependencies]
 egui = "0.11.0"
-miniquad = { version = "=0.3.0-alpha.29" }
+miniquad = { version = "=0.3.0-alpha.30" }
 quad-url = "0.1.0"
 
 # https://github.com/not-fl3/miniquad/issues/172
