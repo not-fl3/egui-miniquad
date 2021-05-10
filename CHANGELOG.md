@@ -1,3 +1,6 @@
+# Unreleased
+* Update egui to `0.12.0`
+
 # 0.3.0 - 2021-04-12
 * Update egui to `0.11.0`
 * Update miniquad to `0.3.0-alpha.29`

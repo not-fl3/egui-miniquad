@@ -207,8 +207,15 @@ impl EguiMq {
     }
 
     /// Call from your [`miniquad::EventHandler`].
-    pub fn mouse_wheel_event(&mut self, ctx: &mut mq::Context, dx: f32, dy: f32) {
-        self.egui_input.scroll_delta += egui::vec2(dx, dy) * ctx.dpi_scale(); // not quite right speed on Mac for some reason
+    pub fn mouse_wheel_event(&mut self, _ctx: &mut mq::Context, dx: f32, dy: f32) {
+        let delta = egui::vec2(dx, dy); // Correct for web, but too slow for mac native :/
+
+        if self.egui_input.modifiers.ctrl {
+            // Treat as zoom instead:
+            self.egui_input.zoom_delta *= (delta.y / 200.0).exp();
+        } else {
+            self.egui_input.scroll_delta += delta;
+        }
     }
 
     /// Call from your [`miniquad::EventHandler`].
