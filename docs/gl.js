@@ -8,7 +8,7 @@
 
 "use strict";
 
-const version = "0.1.23";
+const version = "0.1.25";
 
 const canvas = document.querySelector("#glcanvas");
 const gl = canvas.getContext("webgl");
@@ -26,9 +26,14 @@ var high_dpi = false;
 canvas.focus();
 
 canvas.requestPointerLock = canvas.requestPointerLock ||
-    canvas.mozRequestPointerLock;
+    canvas.mozRequestPointerLock ||
+    // pointer lock in any form is not supported on iOS safari 
+    // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API#browser_compatibility
+    (function () {});
 document.exitPointerLock = document.exitPointerLock ||
-    document.mozExitPointerLock;
+    document.mozExitPointerLock ||
+    // pointer lock in any form is not supported on iOS safari
+    (function () {});
 
 function assert(flag, message) {
     if (flag == false) {
@@ -547,7 +552,7 @@ function into_sapp_keycode(key_code) {
     console.log("Unsupported keyboard key: ", key_code)
 }
 
-function dpi_scale() {
+function dpi_scale()  {
     if (high_dpi) {
         return window.devicePixelRatio || 1.0;
     } else {
@@ -599,7 +604,7 @@ var importObject = {
         set_emscripten_shader_hack: function (flag) {
             emscripten_shaders_hack = flag;
         },
-        sapp_set_clipboard: function (ptr, len) {
+        sapp_set_clipboard: function(ptr, len) {
             clipboard = UTF8ToString(ptr, len);
         },
         dpi_scale,
@@ -651,7 +656,7 @@ var importObject = {
             gl.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type,
                 pixels ? getArray(pixels, Uint8Array, texture_size(format, width, height)) : null);
         },
-        glReadPixels: function (x, y, width, height, format, type, pixels) {
+        glReadPixels: function(x, y, width, height, format, type, pixels) {
             var pixelData = getArray(pixels, Uint8Array, texture_size(format, width, height));
             gl.readPixels(x, y, width, height, format, type, pixelData);
         },
@@ -1019,41 +1024,41 @@ var importObject = {
                 GL.textures[id] = null;
             }
         },
-        glGenQueries: function (n, ids) {
-            _glGenObject(n, ids, 'createQuery', GL.timerQueries, 'glGenQueries');
-        },
-        glDeleteQueries: function (n, ids) {
+		glGenQueries: function (n, ids) {
+			_glGenObject(n, ids, 'createQuery', GL.timerQueries, 'glGenQueries');
+		},
+		glDeleteQueries: function (n, ids) {
             for (var i = 0; i < n; i++) {
                 var id = getArray(textures + i * 4, Uint32Array, 1)[0];
                 var query = GL.timerQueries[id];
                 if (!query) {
-                    continue;
-                }
+					continue;
+				}
                 gl.deleteQuery(query);
                 query.name = 0;
                 GL.timerQueries[id] = null;
             }
-        },
-        glBeginQuery: function (target, id) {
-            GL.validateGLObjectID(GL.timerQueries, id, 'glBeginQuery', 'id');
-            gl.beginQuery(target, GL.timerQueries[id]);
-        },
-        glEndQuery: function (target) {
-            gl.endQuery(target);
-        },
-        glGetQueryObjectiv: function (id, pname, ptr) {
-            GL.validateGLObjectID(GL.timerQueries, id, 'glGetQueryObjectiv', 'id');
-            let result = gl.getQueryObject(GL.timerQueries[id], pname);
-            getArray(ptr, Uint32Array, 1)[0] = result;
-        },
-        glGetQueryObjectui64v: function (id, pname, ptr) {
-            GL.validateGLObjectID(GL.timerQueries, id, 'glGetQueryObjectui64v', 'id');
-            let result = gl.getQueryObject(GL.timerQueries[id], pname);
-            let heap = getArray(ptr, Uint32Array, 2);
-            heap[0] = result;
-            heap[1] = (result - heap[0]) / 4294967296;
-        },
-        setup_canvas_size: function (high_dpi) {
+		},
+		glBeginQuery: function (target, id) {
+			GL.validateGLObjectID(GL.timerQueries, id, 'glBeginQuery', 'id');
+			gl.beginQuery(target, GL.timerQueries[id]);
+		},
+		glEndQuery: function (target) {
+			gl.endQuery(target);
+		},
+		glGetQueryObjectiv: function (id, pname, ptr) {
+			GL.validateGLObjectID(GL.timerQueries, id, 'glGetQueryObjectiv', 'id');
+			let result = gl.getQueryObject(GL.timerQueries[id], pname);
+			getArray(ptr, Uint32Array, 1)[0] = result;
+		},
+		glGetQueryObjectui64v: function (id, pname, ptr) {
+			GL.validateGLObjectID(GL.timerQueries, id, 'glGetQueryObjectui64v', 'id');
+			let result = gl.getQueryObject(GL.timerQueries[id], pname);
+			let heap = getArray(ptr, Uint32Array, 2);
+			heap[0] = result;
+			heap[1] = (result - heap[0])/4294967296;
+		},
+        setup_canvas_size: function(high_dpi) {
             window.high_dpi = high_dpi;
             resize(canvas);
         },
@@ -1102,6 +1107,8 @@ var importObject = {
                     case 290: case 291: case 292: case 293: case 294: case 295: case 296: case 297: case 298: case 299:
                     // backspace is Back on Firefox/Windows
                     case 259:
+                    // tab - for UI
+                    case 258:
                         event.preventDefault();
                         break;
                 }
@@ -1142,48 +1149,48 @@ var importObject = {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_BEGAN, touch.identifier, Math.floor(touch.clientX), Math.floor(touch.clientY));
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_BEGAN, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
                 }
             });
             canvas.addEventListener("touchend", function (event) {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_ENDED, touch.identifier, Math.floor(touch.clientX), Math.floor(touch.clientY));
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_ENDED, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
                 }
             });
             canvas.addEventListener("touchcancel", function (event) {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_CANCELED, touch.identifier, Math.floor(touch.clientX), Math.floor(touch.clientY));
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_CANCELED, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
                 }
             });
             canvas.addEventListener("touchmove", function (event) {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_MOVED, touch.identifier, Math.floor(touch.clientX), Math.floor(touch.clientY));
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_MOVED, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
                 }
             });
 
             window.onresize = function () {
                 resize(canvas, wasm_exports.resize);
             };
-            window.addEventListener("copy", function (e) {
+            window.addEventListener("copy", function(e) {
                 if (clipboard != null) {
                     event.clipboardData.setData('text/plain', clipboard);
                     event.preventDefault();
                 }
             });
-            window.addEventListener("cut", function (e) {
+            window.addEventListener("cut", function(e) {
                 if (clipboard != null) {
                     event.clipboardData.setData('text/plain', clipboard);
                     event.preventDefault();
                 }
             });
 
-            window.addEventListener("paste", function (e) {
+            window.addEventListener("paste", function(e) {
                 e.stopPropagation();
                 e.preventDefault();
                 var clipboardData = e.clipboardData || window.clipboardData;
@@ -1249,22 +1256,22 @@ var importObject = {
                 document.exitPointerLock();
             }
         },
-        sapp_set_cursor: function (ptr, len) {
+        sapp_set_cursor: function(ptr, len) {
             canvas.style.cursor = UTF8ToString(ptr, len);
         },
-        sapp_is_fullscreen: function () {
+        sapp_is_fullscreen: function() {
             let fullscreenElement = document.fullscreenElement;
 
             return fullscreenElement != null && fullscreenElement.id == canvas.id;
         },
-        sapp_set_fullscreen: function (fullscreen) {
+        sapp_set_fullscreen: function(fullscreen) {
             if (!fullscreen) {
                 document.exitFullscreen();
             } else {
                 canvas.requestFullscreen();
             }
         },
-        sapp_set_window_size: function (new_width, new_height) {
+        sapp_set_window_size: function(new_width, new_height) {
             canvas.width = new_width;
             canvas.height = new_height;
             resize(canvas, wasm_exports.resize);
@@ -1308,17 +1315,17 @@ function init_plugins(plugins) {
             var version_func = plugins[i].name + "_crate_version";
 
             if (wasm_exports[version_func] == undefined) {
-                console.error("Plugin " + plugins[i].name + " miss version function: " + version_func + ". Probably invalid crate version.");
+                console.log("Plugin " + plugins[i].name + " is present in JS bundle, but is not used in the rust code.");
             } else {
                 var crate_version = u32_to_semver(wasm_exports[version_func]());
 
                 if (plugins[i].version != crate_version) {
                     console.error("Plugin " + plugins[i].name + " version mismatch" +
-                        "js version: " + plugins[i].version + ", crate version: " + crate_version)
+                                  "js version: " + plugins[i].version + ", crate version: " + crate_version)
                 }
             }
         }
-    }
+     }
 }
 
 
@@ -1335,7 +1342,7 @@ function add_missing_functions_stabs(obj) {
     for (const i in imports) {
         if (importObject["env"][imports[i].name] == undefined) {
             console.warn("No " + imports[i].name + " function in gl.js");
-            importObject["env"][imports[i].name] = function () {
+            importObject["env"][imports[i].name] = function() {
                 console.warn("Missed function: " + imports[i].name);
             };
         }
@@ -1362,7 +1369,7 @@ function load(wasm_path) {
                     if (version != crate_version) {
                         console.error(
                             "Version mismatch: gl.js version is: " + version +
-                            ", rust sapp-wasm crate version is: " + crate_version);
+                                ", rust sapp-wasm crate version is: " + crate_version);
                     }
                     init_plugins(plugins);
                     obj.exports.main();
@@ -1387,7 +1394,7 @@ function load(wasm_path) {
                 if (version != crate_version) {
                     console.error(
                         "Version mismatch: gl.js version is: " + version +
-                        ", rust sapp-wasm crate version is: " + crate_version);
+                            ", rust sapp-wasm crate version is: " + crate_version);
                 }
                 init_plugins(plugins);
                 obj.exports.main();
