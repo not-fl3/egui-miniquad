@@ -8,6 +8,7 @@ pub struct Painter {
     pipeline: Pipeline,
     bindings: Bindings,
     egui_texture_version: u64,
+    egui_texture: miniquad::Texture,
 }
 
 impl Painter {
@@ -43,6 +44,7 @@ impl Painter {
             BufferType::IndexBuffer,
             32 * 1024 * std::mem::size_of::<u16>(),
         );
+
         let bindings = Bindings {
             vertex_buffers: vec![vertex_buffer],
             index_buffer,
@@ -53,11 +55,12 @@ impl Painter {
             pipeline,
             bindings,
             egui_texture_version: 0,
+            egui_texture: miniquad::Texture::empty(),
         }
     }
 
     fn rebuild_egui_texture(&mut self, ctx: &mut Context, texture: &egui::Texture) {
-        self.bindings.images[0].delete();
+        self.egui_texture.delete();
 
         let mut texture_data = Vec::new();
         for pixel in texture.srgba_pixels() {
@@ -67,7 +70,7 @@ impl Painter {
             texture_data.push(pixel.a());
         }
         assert_eq!(texture_data.len(), texture.width * texture.height * 4);
-        self.bindings.images[0] = miniquad::Texture::from_data_and_format(
+        self.egui_texture = miniquad::Texture::from_data_and_format(
             ctx,
             &texture_data,
             miniquad::TextureParams {
@@ -133,6 +136,11 @@ impl Painter {
                     Buffer::stream(ctx, BufferType::IndexBuffer, indices_size_bytes);
             }
             self.bindings.index_buffer.update(ctx, &mesh.indices);
+
+            self.bindings.images[0] = match mesh.texture_id {
+                egui::TextureId::Egui => self.egui_texture,
+                egui::TextureId::User(id) => unsafe { miniquad::Texture::from_raw_id(id as u32) },
+            };
 
             let (width_in_pixels, height_in_pixels) = screen_size_in_pixels;
 
