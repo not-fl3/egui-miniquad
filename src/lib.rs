@@ -164,9 +164,9 @@ impl EguiMq {
             cursor_icon,
             open_url,
             copied_text,
-            needs_repaint: _, // miniquad always runs at full framerate
-            events: _,        // no screen reader
-            text_cursor: _,   // no IME
+            needs_repaint: _,   // miniquad always runs at full framerate
+            events: _,          // no screen reader
+            text_cursor_pos: _, // no IME
         } = output;
 
         if let Some(url) = open_url {
