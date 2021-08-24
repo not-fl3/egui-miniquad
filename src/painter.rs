@@ -63,7 +63,8 @@ impl Painter {
         self.egui_texture.delete();
 
         let mut texture_data = Vec::new();
-        for pixel in texture.srgba_pixels() {
+        let gamma = 1.0;
+        for pixel in texture.srgba_pixels(gamma) {
             texture_data.push(pixel.r());
             texture_data.push(pixel.g());
             texture_data.push(pixel.b());
