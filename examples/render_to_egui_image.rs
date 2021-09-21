@@ -156,7 +156,7 @@ impl mq::EventHandler for Stage {
         self.ry += 0.03;
         let model = Mat4::from_euler(EulerRot::YXZ, self.rx, self.ry, 0.);
 
-        let vs_params = display_shader::Uniforms {
+        let vs_params = offscreen_shader::Uniforms {
             mvp: view_proj * model,
         };
 
@@ -255,52 +255,6 @@ fn main() {
     });
 }
 
-mod display_shader {
-    use miniquad as mq;
-
-    pub const VERTEX: &str = r#"#version 100
-    attribute vec4 pos;
-    attribute vec4 color0;
-    attribute vec2 uv0;
-
-    varying lowp vec4 color;
-    varying lowp vec2 uv;
-
-    uniform mat4 mvp;
-
-    void main() {
-        gl_Position = mvp * pos;
-        color = color0;
-        uv = uv0;
-    }
-    "#;
-
-    pub const FRAGMENT: &str = r#"#version 100
-    varying lowp vec4 color;
-    varying lowp vec2 uv;
-
-    uniform sampler2D tex;
-
-    void main() {
-        gl_FragColor = color * texture2D(tex, uv);
-    }
-    "#;
-
-    pub fn meta() -> mq::ShaderMeta {
-        mq::ShaderMeta {
-            images: vec!["tex".to_string()],
-            uniforms: mq::UniformBlockLayout {
-                uniforms: vec![mq::UniformDesc::new("mvp", mq::UniformType::Mat4)],
-            },
-        }
-    }
-
-    #[repr(C)]
-    pub struct Uniforms {
-        pub mvp: glam::Mat4,
-    }
-}
-
 mod offscreen_shader {
     use miniquad as mq;
 
@@ -333,5 +287,10 @@ mod offscreen_shader {
                 uniforms: vec![mq::UniformDesc::new("mvp", mq::UniformType::Mat4)],
             },
         }
+    }
+
+    #[repr(C)]
+    pub struct Uniforms {
+        pub mvp: glam::Mat4,
     }
 }
