@@ -67,7 +67,7 @@ impl Stage {
              1.0,  1.0, -1.0,    1.0, 0.0, 0.5, 1.0,     0.0, 1.0
         ];
 
-        let vertex_buffer = mq::Buffer::immutable(ctx, mq::BufferType::VertexBuffer, &vertices);
+        let vertex_buffer = mq::Buffer::immutable(ctx, mq::BufferType::VertexBuffer, vertices);
 
         #[rustfmt::skip]
         let indices: &[u16] = &[
@@ -79,11 +79,11 @@ impl Stage {
             22, 21, 20,  23, 22, 20
         ];
 
-        let index_buffer = mq::Buffer::immutable(ctx, mq::BufferType::IndexBuffer, &indices);
+        let index_buffer = mq::Buffer::immutable(ctx, mq::BufferType::IndexBuffer, indices);
 
         let offscreen_bind = mq::Bindings {
-            vertex_buffers: vec![vertex_buffer.clone()],
-            index_buffer: index_buffer.clone(),
+            vertex_buffers: vec![vertex_buffer],
+            index_buffer,
             images: vec![],
         };
 
@@ -250,7 +250,11 @@ impl mq::EventHandler for Stage {
 }
 
 fn main() {
-    miniquad::start(mq::conf::Conf::default(), |mut ctx| {
+    let conf = mq::conf::Conf {
+        high_dpi: true,
+        ..Default::default()
+    };
+    mq::start(conf, |mut ctx| {
         mq::UserData::owning(Stage::new(&mut ctx), ctx)
     });
 }
