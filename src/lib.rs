@@ -19,12 +19,6 @@
 //!             egui_mq: egui_miniquad::EguiMq::new(ctx),
 //!         }
 //!     }
-//!
-//!     fn ui(&mut self) {
-//!         egui::Window::new("Egui Window").show(self.egui_mq.egui_ctx(), |ui| {
-//!             ui.heading("Hello World!");
-//!         });
-//!     }
 //! }
 //!
 //! impl mq::EventHandler for MyMiniquadApp {
@@ -35,9 +29,11 @@
 //!         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
 //!         ctx.end_render_pass();
 //!
-//!         self.egui_mq.begin_frame(ctx);
-//!         self.ui();
-//!         self.egui_mq.end_frame(ctx);
+//!         self.egui_mq.run(ctx, |egui_ctx|{
+//!             egui::Window::new("Egui Window").show(egui_ctx, |ui| {
+//!                 ui.heading("Hello World!");
+//!             });
+//!         });
 //!
 //!         // Draw things behind egui here
 //!
@@ -143,20 +139,13 @@ impl EguiMq {
         &self.egui_ctx
     }
 
-    /// Call this at the start of each `draw` call.
-    pub fn begin_frame(&mut self, mq_ctx: &mut mq::Context) {
+    /// Run the ui code for one frame.
+    pub fn run(&mut self, mq_ctx: &mut mq::Context, run_ui: impl FnOnce(&egui::CtxRef)) {
         input::on_frame_start(&mut self.egui_input, mq_ctx);
-        self.egui_ctx.begin_frame(self.egui_input.take());
-    }
+        let (output, shapes) = self.egui_ctx.run(self.egui_input.take(), run_ui);
 
-    /// Call this at the end of each `draw` call.
-    /// This will draw the `egui` interface.
-    pub fn end_frame(&mut self, mq_ctx: &mut mq::Context) {
-        let (output, shapes) = self.egui_ctx.end_frame();
         if self.shapes.is_some() {
-            eprintln!(
-                "Egui contents not drawed. You need to call `draw` after calling `end_frame`"
-            );
+            eprintln!("Egui contents not drawed. You need to call `draw` after calling `run`");
         }
         self.shapes = Some(shapes);
 
@@ -195,7 +184,7 @@ impl EguiMq {
         if let Some(shapes) = self.shapes.take() {
             let paint_jobs = self.egui_ctx.tessellate(shapes);
             self.painter
-                .paint(mq_ctx, paint_jobs, &self.egui_ctx.texture());
+                .paint(mq_ctx, paint_jobs, &self.egui_ctx.font_image());
         } else {
             eprintln!("Failed to draw egui. You need to call `end_frame` before calling `draw`");
         }
@@ -211,12 +200,13 @@ impl EguiMq {
     pub fn mouse_wheel_event(&mut self, _ctx: &mut mq::Context, dx: f32, dy: f32) {
         let delta = egui::vec2(dx, dy); // Correct for web, but too slow for mac native :/
 
-        if self.egui_input.modifiers.ctrl {
+        let event = if self.egui_input.modifiers.ctrl {
             // Treat as zoom instead:
-            self.egui_input.zoom_delta *= (delta.y / 200.0).exp();
+            egui::Event::Zoom((delta.y / 200.0).exp())
         } else {
-            self.egui_input.scroll_delta += delta;
-        }
+            egui::Event::Scroll(delta)
+        };
+        self.egui_input.events.push(event);
     }
 
     /// Call from your [`miniquad::EventHandler`].

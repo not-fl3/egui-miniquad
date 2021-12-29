@@ -3,7 +3,8 @@ name = "egui-miniquad"
 version = "0.7.0"
 authors = ["Logachev Fedor <not.fl3@gmail.com>", "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
 description = "Bindings between egui and miniquad"
-edition = "2018"
+edition = "2021"
+rust-version = "1.56"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 homepage = "https://github.com/not-fl3/egui-miniquad"
@@ -18,7 +19,7 @@ include = [
 ]
 
 [dependencies]
-egui = "0.15.0"
+egui = "0.16.0"
 miniquad = { version = "=0.3.0-alpha.37" }
 quad-url = "0.1.0"
 
@@ -27,7 +28,7 @@ quad-url = "0.1.0"
 copypasta = "0.7"
 
 [dev-dependencies]
-egui_demo_lib = { version = "0.15.0", default-features = false }
+egui_demo_lib = { version = "0.16.0", default-features = false }
 glam = "0.19"
 
 [profile.release]

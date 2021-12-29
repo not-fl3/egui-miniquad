@@ -1,4 +1,5 @@
 # Unreleased
+* Update to egui `0.16.0`
 
 # 0.7.0 - 2021-10-24
 * Update egui to `0.15.0`
