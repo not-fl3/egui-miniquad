@@ -1,4 +1,4 @@
-use egui::paint::Vertex;
+use egui::epaint::Vertex;
 use miniquad::{
     Bindings, BlendFactor, BlendState, BlendValue, Buffer, BufferLayout, BufferType, Context,
     Equation, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
@@ -59,18 +59,18 @@ impl Painter {
         }
     }
 
-    fn rebuild_egui_texture(&mut self, ctx: &mut Context, texture: &egui::Texture) {
+    fn rebuild_egui_texture(&mut self, ctx: &mut Context, font_image: &egui::FontImage) {
         self.egui_texture.delete();
 
         let mut texture_data = Vec::new();
         let gamma = 1.0;
-        for pixel in texture.srgba_pixels(gamma) {
+        for pixel in font_image.srgba_pixels(gamma) {
             texture_data.push(pixel.r());
             texture_data.push(pixel.g());
             texture_data.push(pixel.b());
             texture_data.push(pixel.a());
         }
-        assert_eq!(texture_data.len(), texture.width * texture.height * 4);
+        assert_eq!(texture_data.len(), font_image.width * font_image.height * 4);
         self.egui_texture = miniquad::Texture::from_data_and_format(
             ctx,
             &texture_data,
@@ -78,8 +78,8 @@ impl Painter {
                 format: miniquad::TextureFormat::RGBA8,
                 wrap: miniquad::TextureWrap::Clamp,
                 filter: miniquad::FilterMode::Linear,
-                width: texture.width as _,
-                height: texture.height as _,
+                width: font_image.width as _,
+                height: font_image.height as _,
             },
         );
     }
@@ -88,11 +88,11 @@ impl Painter {
         &mut self,
         ctx: &mut Context,
         meshes: Vec<egui::ClippedMesh>,
-        texture: &egui::Texture,
+        font_image: &egui::FontImage,
     ) {
-        if texture.version != self.egui_texture_version {
-            self.rebuild_egui_texture(ctx, texture);
-            self.egui_texture_version = texture.version;
+        if font_image.version != self.egui_texture_version {
+            self.rebuild_egui_texture(ctx, font_image);
+            self.egui_texture_version = font_image.version;
         }
 
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
@@ -114,7 +114,12 @@ impl Painter {
         ctx.end_render_pass();
     }
 
-    pub fn paint_job(&mut self, ctx: &mut Context, clip_rect: egui::Rect, mesh: egui::paint::Mesh) {
+    pub fn paint_job(
+        &mut self,
+        ctx: &mut Context,
+        clip_rect: egui::Rect,
+        mesh: egui::epaint::Mesh,
+    ) {
         let screen_size_in_pixels = ctx.screen_size();
         let pixels_per_point = ctx.dpi_scale();
 

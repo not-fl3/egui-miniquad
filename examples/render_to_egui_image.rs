@@ -122,21 +122,6 @@ impl Stage {
             ry: 0.,
         }
     }
-
-    fn ui(&mut self, texture_id: egui::TextureId) {
-        let Self { egui_mq, .. } = self;
-
-        let egui_ctx = egui_mq.egui_ctx();
-        egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
-            ui.image(texture_id, egui::Vec2::new(140.0, 140.0));
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                if ui.button("Quit").clicked() {
-                    std::process::exit(0);
-                }
-            }
-        });
-    }
 }
 
 impl mq::EventHandler for Stage {
@@ -181,11 +166,18 @@ impl mq::EventHandler for Stage {
         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
         ctx.end_render_pass();
 
-        self.egui_mq.begin_frame(ctx);
-
-        // pass in TextureId to be rendered in egui ui.image
-        self.ui(egui_texture_id);
-        self.egui_mq.end_frame(ctx);
+        // Run the UI code:
+        self.egui_mq.run(ctx, |egui_ctx| {
+            egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
+                ui.image(egui_texture_id, egui::Vec2::new(140.0, 140.0));
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    if ui.button("Quit").clicked() {
+                        std::process::exit(0);
+                    }
+                }
+            });
+        });
 
         // Draw things behind egui here
 
