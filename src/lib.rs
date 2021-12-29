@@ -198,7 +198,12 @@ impl EguiMq {
 
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_wheel_event(&mut self, _ctx: &mut mq::Context, dx: f32, dy: f32) {
-        let delta = egui::vec2(dx, dy); // Correct for web, but too slow for mac native :/
+        let delta = egui::vec2(dx, dy)
+            * if cfg!(target_arch = "wasm32") {
+                1.0
+            } else {
+                8.0
+            };
 
         let event = if self.egui_input.modifiers.ctrl {
             // Treat as zoom instead:
