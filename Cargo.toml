@@ -20,7 +20,7 @@ include = [
 
 [dependencies]
 egui = "0.16.0"
-miniquad = { version = "=0.3.0-alpha.37" }
+miniquad = { version = "=0.3.0-alpha.43" }
 quad-url = "0.1.0"
 
 # https://github.com/not-fl3/miniquad/issues/172
@@ -29,7 +29,7 @@ copypasta = "0.7"
 
 [dev-dependencies]
 egui_demo_lib = { version = "0.16.0", default-features = false }
-glam = "0.19"
+glam = "0.20"
 
 [profile.release]
 opt-level = 2 # fast and small wasm
