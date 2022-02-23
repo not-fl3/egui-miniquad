@@ -113,51 +113,60 @@ use copypasta::ClipboardProvider;
 ///
 ///
 pub struct EguiMq {
-    egui_ctx: egui::CtxRef,
+    egui_ctx: egui::Context,
     egui_input: egui::RawInput,
     painter: painter::Painter,
     #[cfg(target_os = "macos")]
     clipboard: Option<copypasta::ClipboardContext>,
     shapes: Option<Vec<egui::epaint::ClippedShape>>,
+    textures_delta: egui::TexturesDelta,
 }
 
 impl EguiMq {
     pub fn new(mq_ctx: &mut mq::Context) -> Self {
         Self {
-            egui_ctx: egui::CtxRef::default(),
+            egui_ctx: egui::Context::default(),
             painter: painter::Painter::new(mq_ctx),
             egui_input: Default::default(),
             #[cfg(target_os = "macos")]
             clipboard: init_clipboard(),
             shapes: None,
+            textures_delta: Default::default(),
         }
     }
 
     /// Use this to open egui windows, panels etc.
     /// Can only be used between [`Self::begin_frame`] and [`Self::end_frame`].
-    pub fn egui_ctx(&self) -> &egui::CtxRef {
+    pub fn egui_ctx(&self) -> &egui::Context {
         &self.egui_ctx
     }
 
     /// Run the ui code for one frame.
-    pub fn run(&mut self, mq_ctx: &mut mq::Context, run_ui: impl FnOnce(&egui::CtxRef)) {
+    pub fn run(&mut self, mq_ctx: &mut mq::Context, run_ui: impl FnOnce(&egui::Context)) {
         input::on_frame_start(&mut self.egui_input, mq_ctx);
-        let (output, shapes) = self.egui_ctx.run(self.egui_input.take(), run_ui);
+        let full_output = self.egui_ctx.run(self.egui_input.take(), run_ui);
+
+        let egui::FullOutput {
+            platform_output,
+            needs_repaint: _, // miniquad always runs at full framerate
+            textures_delta,
+            shapes,
+        } = full_output;
 
         if self.shapes.is_some() {
-            eprintln!("Egui contents not drawed. You need to call `draw` after calling `run`");
+            eprintln!("Egui contents not drawn. You need to call `draw` after calling `run`");
         }
         self.shapes = Some(shapes);
+        self.textures_delta.append(textures_delta);
 
-        let egui::Output {
+        let egui::PlatformOutput {
             cursor_icon,
             open_url,
             copied_text,
-            needs_repaint: _,             // miniquad always runs at full framerate
             events: _,                    // no screen reader
             text_cursor_pos: _,           // no IME
             mutable_text_under_cursor: _, // no IME
-        } = output;
+        } = platform_output;
 
         if let Some(url) = open_url {
             quad_url::link_open(&url.url, url.new_tab);
@@ -182,9 +191,10 @@ impl EguiMq {
     /// Must be called after `end_frame`.
     pub fn draw(&mut self, mq_ctx: &mut mq::Context) {
         if let Some(shapes) = self.shapes.take() {
-            let paint_jobs = self.egui_ctx.tessellate(shapes);
+            let meshes = self.egui_ctx.tessellate(shapes);
             self.painter
-                .paint(mq_ctx, paint_jobs, &self.egui_ctx.font_image());
+                .paint_and_update_textures(mq_ctx, meshes, &self.textures_delta);
+            self.textures_delta.clear();
         } else {
             eprintln!("Failed to draw egui. You need to call `end_frame` before calling `draw`");
         }

@@ -7,8 +7,7 @@ use miniquad::{
 pub struct Painter {
     pipeline: Pipeline,
     bindings: Bindings,
-    egui_texture_version: u64,
-    egui_texture: miniquad::Texture,
+    textures: std::collections::HashMap<egui::TextureId, miniquad::Texture>,
 }
 
 impl Painter {
@@ -54,47 +53,118 @@ impl Painter {
         Painter {
             pipeline,
             bindings,
-            egui_texture_version: 0,
-            egui_texture: miniquad::Texture::empty(),
+            textures: Default::default(),
         }
     }
 
-    fn rebuild_egui_texture(&mut self, ctx: &mut Context, font_image: &egui::FontImage) {
-        self.egui_texture.delete();
+    pub fn set_texture(
+        &mut self,
+        ctx: &mut Context,
+        tex_id: egui::TextureId,
+        delta: &egui::epaint::ImageDelta,
+    ) {
+        let [w, h] = delta.image.size();
 
-        let mut texture_data = Vec::new();
-        let gamma = 1.0;
-        for pixel in font_image.srgba_pixels(gamma) {
-            texture_data.push(pixel.r());
-            texture_data.push(pixel.g());
-            texture_data.push(pixel.b());
-            texture_data.push(pixel.a());
-        }
-        assert_eq!(texture_data.len(), font_image.width * font_image.height * 4);
-        self.egui_texture = miniquad::Texture::from_data_and_format(
-            ctx,
-            &texture_data,
-            miniquad::TextureParams {
+        if let Some([x, y]) = delta.pos {
+            // Partial update
+            if let Some(texture) = self.textures.get(&tex_id) {
+                match &delta.image {
+                    egui::ImageData::Color(image) => {
+                        assert_eq!(
+                            image.width() * image.height(),
+                            image.pixels.len(),
+                            "Mismatch between texture size and texel count"
+                        );
+                        let data: &[u8] = bytemuck::cast_slice(image.pixels.as_ref());
+                        texture.update_texture_part(ctx, x as _, y as _, w as _, h as _, data);
+                    }
+                    egui::ImageData::Alpha(image) => {
+                        assert_eq!(
+                            image.width() * image.height(),
+                            image.pixels.len(),
+                            "Mismatch between texture size and texel count"
+                        );
+
+                        let gamma = 1.0;
+                        let data: Vec<u8> = image
+                            .srgba_pixels(gamma)
+                            .flat_map(|a| a.to_array())
+                            .collect();
+
+                        texture.update_texture_part(ctx, x as _, y as _, w as _, h as _, &data);
+                    }
+                }
+            } else {
+                eprintln!("Failed to find egui texture {:?}", tex_id);
+            }
+        } else {
+            // New texture (or full update).
+            let params = miniquad::TextureParams {
                 format: miniquad::TextureFormat::RGBA8,
                 wrap: miniquad::TextureWrap::Clamp,
                 filter: miniquad::FilterMode::Linear,
-                width: font_image.width as _,
-                height: font_image.height as _,
-            },
-        );
+                width: w as _,
+                height: h as _,
+            };
+
+            let texture = match &delta.image {
+                egui::ImageData::Color(image) => {
+                    assert_eq!(
+                        image.width() * image.height(),
+                        image.pixels.len(),
+                        "Mismatch between texture size and texel count"
+                    );
+                    let data: &[u8] = bytemuck::cast_slice(image.pixels.as_ref());
+                    miniquad::Texture::from_data_and_format(ctx, data, params)
+                }
+                egui::ImageData::Alpha(image) => {
+                    assert_eq!(
+                        image.width() * image.height(),
+                        image.pixels.len(),
+                        "Mismatch between texture size and texel count"
+                    );
+
+                    let gamma = 1.0;
+                    let data: Vec<u8> = image
+                        .srgba_pixels(gamma)
+                        .flat_map(|a| a.to_array())
+                        .collect();
+
+                    miniquad::Texture::from_data_and_format(ctx, &data, params)
+                }
+            };
+
+            let previous = self.textures.insert(tex_id, texture);
+            if let Some(previous) = previous {
+                previous.delete();
+            }
+        }
     }
 
-    pub fn paint(
+    pub fn free_texture(&mut self, tex_id: egui::TextureId) {
+        if let Some(old_tex) = self.textures.remove(&tex_id) {
+            old_tex.delete();
+        }
+    }
+
+    pub fn paint_and_update_textures(
         &mut self,
         ctx: &mut Context,
         meshes: Vec<egui::ClippedMesh>,
-        font_image: &egui::FontImage,
+        textures_delta: &egui::TexturesDelta,
     ) {
-        if font_image.version != self.egui_texture_version {
-            self.rebuild_egui_texture(ctx, font_image);
-            self.egui_texture_version = font_image.version;
+        for (id, image_delta) in &textures_delta.set {
+            self.set_texture(ctx, *id, image_delta);
         }
 
+        self.paint(ctx, meshes);
+
+        for &id in &textures_delta.free {
+            self.free_texture(id);
+        }
+    }
+
+    pub fn paint(&mut self, ctx: &mut Context, meshes: Vec<egui::ClippedMesh>) {
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
         ctx.apply_pipeline(&self.pipeline);
 
@@ -144,7 +214,14 @@ impl Painter {
             self.bindings.index_buffer.update(ctx, &mesh.indices);
 
             self.bindings.images[0] = match mesh.texture_id {
-                egui::TextureId::Egui => self.egui_texture,
+                egui::TextureId::Managed(id) => {
+                    if let Some(tex) = self.textures.get(&mesh.texture_id) {
+                        *tex
+                    } else {
+                        eprintln!("Texture {:?} not found", id);
+                        continue;
+                    }
+                }
                 egui::TextureId::User(id) => unsafe { miniquad::Texture::from_raw_id(id as u32) },
             };
 
