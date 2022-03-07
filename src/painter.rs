@@ -85,7 +85,7 @@ impl Painter {
                             "Mismatch between texture size and texel count"
                         );
 
-                        let gamma = 1.0;
+                        let gamma = 1.0 / 2.2;
                         let data: Vec<u8> = image
                             .srgba_pixels(gamma)
                             .flat_map(|a| a.to_array())
@@ -332,16 +332,30 @@ mod shader {
     }
 
     void main() {
-        vec4 texture_srgba = texture2D(u_sampler, v_tc);
-        vec4 texture_rgba = linear_from_srgba(texture2D(u_sampler, v_tc) * 255.0); // TODO: sRGBA aware sampeler, see linear_from_srgb;
+        // We must decode the colors, since WebGL1 doesn't come with sRGBA textures:
+        vec4 texture_rgba = linear_from_srgba(texture2D(u_sampler, v_tc) * 255.0);
+        /// Multiply vertex color with texture color (in linear space).
         gl_FragColor = v_rgba * texture_rgba;
 
-        // miniquad doesn't support linear blending in the framebuffer.
-        // so we need to convert linear to sRGBA:
-        gl_FragColor = srgba_from_linear(gl_FragColor) / 255.0; // TODO: sRGBA aware framebuffer
+        // WebGL1 doesn't support linear blending in the framebuffer,
+        // so we do a hack here where we change the premultiplied alpha
+        // to do the multiplication in gamma space instead:
 
-        // We also apply this hack to at least get a bit closer to the desired blending:
-        gl_FragColor.a = pow(gl_FragColor.a, 1.6); // Empiric nonsense
+        // Unmultiply alpha:
+        if (gl_FragColor.a > 0.0) {
+            gl_FragColor.rgb /= gl_FragColor.a;
+        }
+
+        // Empiric tweak to make e.g. shadows look more like they should:
+        gl_FragColor.a *= sqrt(gl_FragColor.a);
+
+        // To gamma:
+        gl_FragColor = srgba_from_linear(gl_FragColor) / 255.0;
+
+        // Premultiply alpha, this time in gamma space:
+        if (gl_FragColor.a > 0.0) {
+            gl_FragColor.rgb *= gl_FragColor.a;
+        }
     }
     "#;
 
