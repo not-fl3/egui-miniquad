@@ -31,6 +31,7 @@ impl mq::EventHandler for Stage {
             }
 
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
+                egui::widgets::global_dark_light_mode_buttons(ui);
                 ui.checkbox(&mut self.show_egui_demo_windows, "Show egui demo windows");
 
                 #[cfg(not(target_arch = "wasm32"))]
