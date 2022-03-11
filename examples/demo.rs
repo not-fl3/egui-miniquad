@@ -4,6 +4,7 @@ struct Stage {
     egui_mq: egui_mq::EguiMq,
     show_egui_demo_windows: bool,
     egui_demo_windows: egui_demo_lib::DemoWindows,
+    color_test: egui_demo_lib::ColorTest,
 }
 
 impl Stage {
@@ -12,6 +13,7 @@ impl Stage {
             egui_mq: egui_mq::EguiMq::new(ctx),
             show_egui_demo_windows: true,
             egui_demo_windows: Default::default(),
+            color_test: Default::default(),
         }
     }
 }
@@ -31,6 +33,7 @@ impl mq::EventHandler for Stage {
             }
 
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
+                egui::widgets::global_dark_light_mode_buttons(ui);
                 ui.checkbox(&mut self.show_egui_demo_windows, "Show egui demo windows");
 
                 #[cfg(not(target_arch = "wasm32"))]
@@ -39,6 +42,14 @@ impl mq::EventHandler for Stage {
                         std::process::exit(0);
                     }
                 }
+            });
+
+            egui::Window::new("Color Test").show(egui_ctx, |ui| {
+                egui::ScrollArea::both()
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        self.color_test.ui(ui);
+                    });
             });
         });
 
