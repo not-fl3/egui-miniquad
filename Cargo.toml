@@ -1,7 +1,10 @@
 [package]
 name = "egui-miniquad"
-version = "0.9.0"
-authors = ["Logachev Fedor <not.fl3@gmail.com>", "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
+version = "0.10.0"
+authors = [
+  "Logachev Fedor <not.fl3@gmail.com>",
+  "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>",
+]
 description = "Bindings between egui and miniquad"
 edition = "2021"
 rust-version = "1.56"
@@ -11,17 +14,12 @@ homepage = "https://github.com/not-fl3/egui-miniquad"
 repository = "https://github.com/not-fl3/egui-miniquad"
 categories = ["gui", "game-development"]
 keywords = ["gui", "imgui", "immediate", "portable", "gamedev"]
-include = [
-  "../LICENSE-APACHE",
-  "../LICENSE-MIT",
-  "**/*.rs",
-  "Cargo.toml",
-]
+include = ["../LICENSE-APACHE", "../LICENSE-MIT", "**/*.rs", "Cargo.toml"]
 
 [dependencies]
 bytemuck = "1.7"
 egui = { version = "0.17.0", features = ["convert_bytemuck"] }
-miniquad = { version = "=0.3.0-alpha.45" }
+miniquad = { version = "=0.3.0-alpha.46" }
 quad-url = "0.1.0"
 
 # https://github.com/not-fl3/miniquad/issues/172

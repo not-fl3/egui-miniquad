@@ -1,5 +1,8 @@
 # Unreleased
 
+# 0.10.0 - 2022-04-05
+Update miniquad to `0.3.0-alpha.46`
+
 # 0.9.0 - 2022-02-23
 * Update egui to `0.17.0`
 
