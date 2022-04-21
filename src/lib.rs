@@ -103,7 +103,7 @@ mod painter;
 
 // ----------------------------------------------------------------------------
 
-use egui::CursorIcon;
+use egui::{CursorIcon, DroppedFile};
 use miniquad as mq;
 
 #[cfg(target_os = "macos")] // https://github.com/not-fl3/miniquad/issues/172
@@ -311,6 +311,18 @@ impl EguiMq {
                 modifiers,
             })
         }
+    }
+
+    /// Call from your [`miniquad::EventHandler`].
+    pub fn files_dropped_event(&mut self) {
+        for i in 0..mq::dnd::dropped_file_count() {
+            self.egui_input.dropped_files.push(DroppedFile {
+                path: mq::dnd::dropped_file_path(i),
+                name: "".to_string(),
+                last_modified: None,
+                bytes: mq::dnd::dropped_file_bytes(i).map(|bytes| bytes.into()),
+            })
+        };
     }
 
     #[cfg(not(target_os = "macos"))]
