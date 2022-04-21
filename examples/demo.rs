@@ -1,3 +1,5 @@
+use egui::DroppedFile;
+use miniquad::Context;
 use {egui_miniquad as egui_mq, miniquad as mq};
 
 struct Stage {
@@ -5,6 +7,7 @@ struct Stage {
     show_egui_demo_windows: bool,
     egui_demo_windows: egui_demo_lib::DemoWindows,
     color_test: egui_demo_lib::ColorTest,
+    dropped_files: Vec<DroppedFile>,
 }
 
 impl Stage {
@@ -14,6 +17,7 @@ impl Stage {
             show_egui_demo_windows: true,
             egui_demo_windows: Default::default(),
             color_test: Default::default(),
+            dropped_files: Default::default(),
         }
     }
 }
@@ -51,6 +55,36 @@ impl mq::EventHandler for Stage {
                         self.color_test.ui(ui);
                     });
             });
+
+            // Collect dropped files:
+            if !egui_ctx.input().raw.dropped_files.is_empty() {
+                self.dropped_files = egui_ctx.input().raw.dropped_files.clone();
+            }
+
+            // Show dropped files (if any):
+            if !self.dropped_files.is_empty() {
+                let mut open = true;
+                egui::Window::new("Dropped files")
+                    .open(&mut open)
+                    .show(egui_ctx, |ui| {
+                        for file in &self.dropped_files {
+                            let mut info = if let Some(path) = &file.path {
+                                path.display().to_string()
+                            } else if !file.name.is_empty() {
+                                file.name.clone()
+                            } else {
+                                "???".to_owned()
+                            };
+                            if let Some(bytes) = &file.bytes {
+                                info += &format!(" ({} bytes)", bytes.len());
+                            }
+                            ui.label(info);
+                        }
+                    });
+                if !open {
+                    self.dropped_files.clear();
+                }
+            }
         });
 
         // Draw things behind egui here
@@ -112,6 +146,10 @@ impl mq::EventHandler for Stage {
 
     fn key_up_event(&mut self, _ctx: &mut mq::Context, keycode: mq::KeyCode, keymods: mq::KeyMods) {
         self.egui_mq.key_up_event(keycode, keymods);
+    }
+
+    fn files_dropped_event(&mut self, _ctx: &mut Context) {
+        self.egui_mq.files_dropped_event();
     }
 }
 
