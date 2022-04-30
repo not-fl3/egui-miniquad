@@ -399,6 +399,16 @@ fn to_mq_cursor_icon(cursor_icon: egui::CursorIcon) -> Option<mq::CursorIcon> {
         | egui::CursorIcon::ContextMenu
         | egui::CursorIcon::Copy
         | egui::CursorIcon::NoDrop
+        | egui::CursorIcon::ResizeColumn
+        | egui::CursorIcon::ResizeEast
+        | egui::CursorIcon::ResizeNorth
+        | egui::CursorIcon::ResizeNorthEast
+        | egui::CursorIcon::ResizeNorthWest
+        | egui::CursorIcon::ResizeRow
+        | egui::CursorIcon::ResizeSouth
+        | egui::CursorIcon::ResizeSouthEast
+        | egui::CursorIcon::ResizeSouthWest
+        | egui::CursorIcon::ResizeWest
         | egui::CursorIcon::VerticalText
         | egui::CursorIcon::ZoomIn
         | egui::CursorIcon::ZoomOut => None,

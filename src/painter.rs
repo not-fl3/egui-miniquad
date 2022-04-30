@@ -79,14 +79,14 @@ impl Painter {
                         let data: &[u8] = bytemuck::cast_slice(image.pixels.as_ref());
                         texture.update_texture_part(ctx, x as _, y as _, w as _, h as _, data);
                     }
-                    egui::ImageData::Alpha(image) => {
+                    egui::ImageData::Font(image) => {
                         assert_eq!(
                             image.width() * image.height(),
                             image.pixels.len(),
                             "Mismatch between texture size and texel count"
                         );
 
-                        let gamma = 1.0 / 2.2;
+                        let gamma = 1.0;
                         let data: Vec<u8> = image
                             .srgba_pixels(gamma)
                             .flat_map(|a| a.to_array())
@@ -118,14 +118,14 @@ impl Painter {
                     let data: &[u8] = bytemuck::cast_slice(image.pixels.as_ref());
                     miniquad::Texture::from_data_and_format(ctx, data, params)
                 }
-                egui::ImageData::Alpha(image) => {
+                egui::ImageData::Font(image) => {
                     assert_eq!(
                         image.width() * image.height(),
                         image.pixels.len(),
                         "Mismatch between texture size and texel count"
                     );
 
-                    let gamma = 1.0 / 2.2;
+                    let gamma = 1.0;
                     let data: Vec<u8> = image
                         .srgba_pixels(gamma)
                         .flat_map(|a| a.to_array())
@@ -151,21 +151,21 @@ impl Painter {
     pub fn paint_and_update_textures(
         &mut self,
         ctx: &mut Context,
-        meshes: Vec<egui::ClippedMesh>,
+        primtives: Vec<egui::ClippedPrimitive>,
         textures_delta: &egui::TexturesDelta,
     ) {
         for (id, image_delta) in &textures_delta.set {
             self.set_texture(ctx, *id, image_delta);
         }
 
-        self.paint(ctx, meshes);
+        self.paint(ctx, primtives);
 
         for &id in &textures_delta.free {
             self.free_texture(id);
         }
     }
 
-    pub fn paint(&mut self, ctx: &mut Context, meshes: Vec<egui::ClippedMesh>) {
+    pub fn paint(&mut self, ctx: &mut Context, primtives: Vec<egui::ClippedPrimitive>) {
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
         ctx.apply_pipeline(&self.pipeline);
 
@@ -178,8 +178,28 @@ impl Painter {
             u_screen_size: screen_size_in_points,
         });
 
-        for egui::ClippedMesh(clip_rect, mesh) in meshes {
-            self.paint_job(ctx, clip_rect, mesh);
+        for egui::ClippedPrimitive {
+            clip_rect,
+            primitive,
+        } in primtives
+        {
+            match primitive {
+                egui::epaint::Primitive::Mesh(mesh) => {
+                    self.paint_job(ctx, clip_rect, mesh);
+                }
+                egui::epaint::Primitive::Callback(callback) => {
+                    let info = egui::PaintCallbackInfo {
+                        viewport: callback.rect,
+                        clip_rect,
+                        pixels_per_point: ctx.dpi_scale(),
+                        screen_size_px: [
+                            screen_size_in_pixels.0.round() as _,
+                            screen_size_in_pixels.1.round() as _,
+                        ],
+                    };
+                    callback.call(&info, ctx)
+                }
+            }
         }
 
         ctx.end_render_pass();
