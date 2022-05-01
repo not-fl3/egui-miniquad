@@ -1,13 +1,13 @@
 [package]
 name = "egui-miniquad"
-version = "0.10.0"
+version = "0.11.0"
 authors = [
   "Logachev Fedor <not.fl3@gmail.com>",
   "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>",
 ]
 description = "Bindings between egui and miniquad"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.60"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 homepage = "https://github.com/not-fl3/egui-miniquad"
