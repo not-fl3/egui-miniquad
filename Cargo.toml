@@ -18,7 +18,7 @@ include = ["../LICENSE-APACHE", "../LICENSE-MIT", "**/*.rs", "Cargo.toml"]
 
 [dependencies]
 bytemuck = "1.7"
-egui = { version = "0.18.0", features = ["bytemuck"] }
+egui = { version = "0.18.1", features = ["bytemuck"] }
 miniquad = { version = "=0.3.0-alpha.46" }
 quad-url = "0.1.0"
 
