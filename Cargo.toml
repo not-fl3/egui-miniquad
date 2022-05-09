@@ -19,7 +19,7 @@ include = ["../LICENSE-APACHE", "../LICENSE-MIT", "**/*.rs", "Cargo.toml"]
 [dependencies]
 bytemuck = "1.7"
 egui = { version = "0.17.0", features = ["convert_bytemuck"] }
-miniquad = { version = "=0.3.0-alpha.46" }
+miniquad = { version = "0.3.0" }
 quad-url = "0.1.0"
 
 # https://github.com/not-fl3/miniquad/issues/172
