@@ -197,7 +197,7 @@ impl Painter {
                             screen_size_in_pixels.1.round() as _,
                         ],
                     };
-                    callback.call(&info, unsafe { &mut ctx.static_context() })
+                    callback.call(&info, ctx)
                 }
             }
         }
