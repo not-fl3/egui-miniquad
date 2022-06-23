@@ -17,18 +17,18 @@ keywords = ["gui", "imgui", "immediate", "portable", "gamedev"]
 include = ["../LICENSE-APACHE", "../LICENSE-MIT", "**/*.rs", "Cargo.toml"]
 
 [dependencies]
-bytemuck = "1.7"
+bytemuck = "1.9"
 egui = { version = "0.18.1", features = ["bytemuck"] }
-miniquad = { version = "=0.3.0-alpha.46" }
-quad-url = "0.1.0"
+miniquad = { version = "0.3.8" }
+quad-url = "0.1"
 
 # https://github.com/not-fl3/miniquad/issues/172
 [target.'cfg(target_os = "macos")'.dependencies]
-copypasta = "0.7"
+copypasta = "0.8.1"
 
 [dev-dependencies]
 egui_demo_lib = { version = "0.18.0", default-features = false }
-glam = "0.20"
+glam = "0.21.1"
 
 [profile.release]
 opt-level = 2 # fast and small wasm

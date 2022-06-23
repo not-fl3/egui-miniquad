@@ -120,7 +120,5 @@ fn main() {
         high_dpi: true,
         ..Default::default()
     };
-    mq::start(conf, |mut ctx| {
-        mq::UserData::owning(Stage::new(&mut ctx), ctx)
-    });
+    mq::start(conf, |mut ctx| Box::new(Stage::new(&mut ctx)));
 }
