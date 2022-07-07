@@ -153,26 +153,32 @@ impl Painter {
         ctx: &mut Context,
         primtives: Vec<egui::ClippedPrimitive>,
         textures_delta: &egui::TexturesDelta,
+        egui_ctx: &egui::Context,
     ) {
         for (id, image_delta) in &textures_delta.set {
             self.set_texture(ctx, *id, image_delta);
         }
 
-        self.paint(ctx, primtives);
+        self.paint(ctx, primtives, egui_ctx);
 
         for &id in &textures_delta.free {
             self.free_texture(id);
         }
     }
 
-    pub fn paint(&mut self, ctx: &mut Context, primtives: Vec<egui::ClippedPrimitive>) {
+    pub fn paint(
+        &mut self,
+        ctx: &mut Context,
+        primtives: Vec<egui::ClippedPrimitive>,
+        egui_ctx: &egui::Context,
+    ) {
         ctx.begin_default_pass(miniquad::PassAction::Nothing);
         ctx.apply_pipeline(&self.pipeline);
 
         let screen_size_in_pixels = ctx.screen_size();
         let screen_size_in_points = (
-            screen_size_in_pixels.0 / ctx.dpi_scale(),
-            screen_size_in_pixels.1 / ctx.dpi_scale(),
+            screen_size_in_pixels.0 / egui_ctx.pixels_per_point(),
+            screen_size_in_pixels.1 / egui_ctx.pixels_per_point(),
         );
         ctx.apply_uniforms(&shader::Uniforms {
             u_screen_size: screen_size_in_points,
@@ -185,13 +191,13 @@ impl Painter {
         {
             match primitive {
                 egui::epaint::Primitive::Mesh(mesh) => {
-                    self.paint_job(ctx, clip_rect, mesh);
+                    self.paint_job(ctx, clip_rect, mesh, egui_ctx);
                 }
                 egui::epaint::Primitive::Callback(callback) => {
                     let info = egui::PaintCallbackInfo {
                         viewport: callback.rect,
                         clip_rect,
-                        pixels_per_point: ctx.dpi_scale(),
+                        pixels_per_point: egui_ctx.pixels_per_point(),
                         screen_size_px: [
                             screen_size_in_pixels.0.round() as _,
                             screen_size_in_pixels.1.round() as _,
@@ -210,9 +216,10 @@ impl Painter {
         ctx: &mut Context,
         clip_rect: egui::Rect,
         mesh: egui::epaint::Mesh,
+        egui_ctx: &egui::Context,
     ) {
         let screen_size_in_pixels = ctx.screen_size();
-        let pixels_per_point = ctx.dpi_scale();
+        let pixels_per_point = egui_ctx.pixels_per_point();
 
         // TODO: support u32 indices in miniquad and just use "mesh.indices" without a need for `split_to_u16`
         let meshes = mesh.split_to_u16();

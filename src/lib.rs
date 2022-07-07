@@ -44,12 +44,12 @@
 //!         ctx.commit_frame();
 //!     }
 //!
-//!     fn mouse_motion_event(&mut self, ctx: &mut mq::Context, x: f32, y: f32) {
-//!         self.egui_mq.mouse_motion_event(ctx, x, y);
+//!     fn mouse_motion_event(&mut self, _: &mut mq::Context, x: f32, y: f32) {
+//!         self.egui_mq.mouse_motion_event(x, y);
 //!     }
 //!
-//!     fn mouse_wheel_event(&mut self, ctx: &mut mq::Context, dx: f32, dy: f32) {
-//!         self.egui_mq.mouse_wheel_event(ctx, dx, dy);
+//!     fn mouse_wheel_event(&mut self, _: &mut mq::Context, dx: f32, dy: f32) {
+//!         self.egui_mq.mouse_wheel_event(dx, dy);
 //!     }
 //!
 //!     fn mouse_button_down_event(
@@ -141,6 +141,11 @@ impl EguiMq {
         &self.egui_ctx
     }
 
+    /// Use this to modify egui input.
+    pub fn egui_input(&mut self) -> &mut egui::RawInput {
+        &mut self.egui_input
+    }
+
     /// Run the ui code for one frame.
     pub fn run(&mut self, mq_ctx: &mut mq::Context, run_ui: impl FnOnce(&egui::Context)) {
         input::on_frame_start(&mut self.egui_input, mq_ctx);
@@ -192,8 +197,12 @@ impl EguiMq {
     pub fn draw(&mut self, mq_ctx: &mut mq::Context) {
         if let Some(shapes) = self.shapes.take() {
             let meshes = self.egui_ctx.tessellate(shapes);
-            self.painter
-                .paint_and_update_textures(mq_ctx, meshes, &self.textures_delta);
+            self.painter.paint_and_update_textures(
+                mq_ctx,
+                meshes,
+                &self.textures_delta,
+                &self.egui_ctx,
+            );
             self.textures_delta.clear();
         } else {
             eprintln!("Failed to draw egui. You need to call `end_frame` before calling `draw`");
@@ -201,13 +210,16 @@ impl EguiMq {
     }
 
     /// Call from your [`miniquad::EventHandler`].
-    pub fn mouse_motion_event(&mut self, ctx: &mut mq::Context, x: f32, y: f32) {
-        let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
+    pub fn mouse_motion_event(&mut self, x: f32, y: f32) {
+        let pos = egui::pos2(
+            x as f32 / self.egui_ctx.pixels_per_point(),
+            y as f32 / self.egui_ctx.pixels_per_point(),
+        );
         self.egui_input.events.push(egui::Event::PointerMoved(pos))
     }
 
     /// Call from your [`miniquad::EventHandler`].
-    pub fn mouse_wheel_event(&mut self, _ctx: &mut mq::Context, dx: f32, dy: f32) {
+    pub fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
         let delta = egui::vec2(dx, dy)
             * if cfg!(target_arch = "wasm32") {
                 1.0
@@ -227,12 +239,15 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_button_down_event(
         &mut self,
-        ctx: &mut mq::Context,
+        _: &mut mq::Context,
         mb: mq::MouseButton,
         x: f32,
         y: f32,
     ) {
-        let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
+        let pos = egui::pos2(
+            x as f32 / self.egui_ctx.pixels_per_point(),
+            y as f32 / self.egui_ctx.pixels_per_point(),
+        );
         let button = to_egui_button(mb);
         self.egui_input.events.push(egui::Event::PointerButton {
             pos,
@@ -245,12 +260,15 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_button_up_event(
         &mut self,
-        ctx: &mut mq::Context,
+        _: &mut mq::Context,
         mb: mq::MouseButton,
         x: f32,
         y: f32,
     ) {
-        let pos = egui::pos2(x as f32 / ctx.dpi_scale(), y as f32 / ctx.dpi_scale());
+        let pos = egui::pos2(
+            x as f32 / self.egui_ctx.pixels_per_point(),
+            y as f32 / self.egui_ctx.pixels_per_point(),
+        );
         let button = to_egui_button(mb);
 
         self.egui_input.events.push(egui::Event::PointerButton {
