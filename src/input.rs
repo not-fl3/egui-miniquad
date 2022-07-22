@@ -9,7 +9,9 @@ pub fn on_frame_start(egui_input: &mut egui::RawInput, mq_ctx: &mq::Context) {
         Default::default(),
         screen_size_in_points,
     ));
-    egui_input.pixels_per_point = Some(pixels_per_point);
+    if egui_input.pixels_per_point.is_none() {
+        egui_input.pixels_per_point = Some(pixels_per_point);
+    }
     egui_input.time = Some(mq::date::now());
 }
 
