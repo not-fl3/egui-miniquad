@@ -167,7 +167,7 @@ impl mq::EventHandler for Stage {
         ctx.end_render_pass();
 
         // Run the UI code:
-        self.egui_mq.run(ctx, |egui_ctx| {
+        self.egui_mq.run(ctx, |_mq_ctx, egui_ctx| {
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
                 ui.image(egui_texture_id, egui::Vec2::new(140.0, 140.0));
                 #[cfg(not(target_arch = "wasm32"))]

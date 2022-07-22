@@ -1,17 +1,17 @@
 use miniquad as mq;
 
-pub fn on_frame_start(egui_input: &mut egui::RawInput, mq_ctx: &mq::Context) {
+pub fn on_frame_start(
+    egui_input: &mut egui::RawInput,
+    equi_ctx: &egui::Context,
+    mq_ctx: &mq::Context,
+) {
     let screen_size_in_pixels = mq_ctx.screen_size();
-    let pixels_per_point = mq_ctx.dpi_scale();
     let screen_size_in_points =
-        egui::vec2(screen_size_in_pixels.0, screen_size_in_pixels.1) / pixels_per_point;
+        egui::vec2(screen_size_in_pixels.0, screen_size_in_pixels.1) / equi_ctx.pixels_per_point();
     egui_input.screen_rect = Some(egui::Rect::from_min_size(
         Default::default(),
         screen_size_in_points,
     ));
-    if egui_input.pixels_per_point.is_none() {
-        egui_input.pixels_per_point = Some(pixels_per_point);
-    }
     egui_input.time = Some(mq::date::now());
 }
 

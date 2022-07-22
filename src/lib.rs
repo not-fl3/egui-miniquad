@@ -24,12 +24,12 @@
 //! impl mq::EventHandler for MyMiniquadApp {
 //!     fn update(&mut self, _: &mut mq::Context) {}
 //!
-//!     fn draw(&mut self, ctx: &mut mq::Context) {
-//!         ctx.clear(Some((1., 1., 1., 1.)), None, None);
-//!         ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
-//!         ctx.end_render_pass();
+//!     fn draw(&mut self, mq_ctx: &mut mq::Context) {
+//!         mq_ctx.clear(Some((1., 1., 1., 1.)), None, None);
+//!         mq_ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
+//!         mq_ctx.end_render_pass();
 //!
-//!         self.egui_mq.run(ctx, |egui_ctx|{
+//!         self.egui_mq.run(mq_ctx, |_mq_ctx, egui_ctx|{
 //!             egui::Window::new("Egui Window").show(egui_ctx, |ui| {
 //!                 ui.heading("Hello World!");
 //!             });
@@ -37,11 +37,11 @@
 //!
 //!         // Draw things behind egui here
 //!
-//!         self.egui_mq.draw(ctx);
+//!         self.egui_mq.draw(mq_ctx);
 //!
 //!         // Draw things in front of egui here
 //!
-//!         ctx.commit_frame();
+//!         mq_ctx.commit_frame();
 //!     }
 //!
 //!     fn mouse_motion_event(&mut self, _: &mut mq::Context, x: f32, y: f32) {
@@ -113,6 +113,7 @@ use copypasta::ClipboardProvider;
 ///
 ///
 pub struct EguiMq {
+    native_dpi_scale: f32,
     egui_ctx: egui::Context,
     egui_input: egui::RawInput,
     painter: painter::Painter,
@@ -124,10 +125,15 @@ pub struct EguiMq {
 
 impl EguiMq {
     pub fn new(mq_ctx: &mut mq::Context) -> Self {
+        let native_dpi_scale = mq_ctx.dpi_scale();
         Self {
+            native_dpi_scale,
             egui_ctx: egui::Context::default(),
             painter: painter::Painter::new(mq_ctx),
-            egui_input: Default::default(),
+            egui_input: egui::RawInput {
+                pixels_per_point: Some(native_dpi_scale),
+                ..Default::default()
+            },
             #[cfg(target_os = "macos")]
             clipboard: init_clipboard(),
             shapes: None,
@@ -141,15 +147,23 @@ impl EguiMq {
         &self.egui_ctx
     }
 
-    /// Use this to modify egui input.
-    pub fn egui_input(&mut self) -> &mut egui::RawInput {
-        &mut self.egui_input
-    }
-
     /// Run the ui code for one frame.
-    pub fn run(&mut self, mq_ctx: &mut mq::Context, run_ui: impl FnOnce(&egui::Context)) {
-        input::on_frame_start(&mut self.egui_input, mq_ctx);
-        let full_output = self.egui_ctx.run(self.egui_input.take(), run_ui);
+    pub fn run(
+        &mut self,
+        mq_ctx: &mut mq::Context,
+        run_ui: impl FnOnce(&mut mq::Context, &egui::Context),
+    ) {
+        input::on_frame_start(&mut self.egui_input, &self.egui_ctx, mq_ctx);
+
+        if self.native_dpi_scale != mq_ctx.dpi_scale() {
+            // DPI scale change (maybe new monitor?). Tell egui to change:
+            self.native_dpi_scale = mq_ctx.dpi_scale();
+            self.egui_input.pixels_per_point = Some(self.native_dpi_scale);
+        }
+
+        let full_output = self
+            .egui_ctx
+            .run(self.egui_input.take(), |egui_ctx| run_ui(mq_ctx, egui_ctx));
 
         let egui::FullOutput {
             platform_output,
