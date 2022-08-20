@@ -106,6 +106,8 @@ mod painter;
 use egui::CursorIcon;
 use miniquad as mq;
 
+pub use painter::CallbackFn;
+
 #[cfg(target_os = "macos")] // https://github.com/not-fl3/miniquad/issues/172
 use copypasta::ClipboardProvider;
 
@@ -142,7 +144,8 @@ impl EguiMq {
     }
 
     /// Use this to open egui windows, panels etc.
-    /// Can only be used between [`Self::begin_frame`] and [`Self::end_frame`].
+    ///
+    /// May only be used from inside the callback given to [`Self::run`].
     pub fn egui_ctx(&self) -> &egui::Context {
         &self.egui_ctx
     }
@@ -167,7 +170,7 @@ impl EguiMq {
 
         let egui::FullOutput {
             platform_output,
-            needs_repaint: _, // miniquad always runs at full framerate
+            repaint_after: _, // miniquad always runs at full framerate
             textures_delta,
             shapes,
         } = full_output;
