@@ -1,4 +1,5 @@
 # Unreleased
+* Update egui to `0.19.0`
 * You can now scale the GUI with `egui_ctx.set_pixels_per_point(…)`.
 * Add miniquad context as a parameter in the lambda in `EguiMq::run`
 

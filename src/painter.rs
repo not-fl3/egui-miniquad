@@ -1,8 +1,31 @@
 use egui::epaint::Vertex;
 use miniquad::{
     Bindings, BlendFactor, BlendState, BlendValue, Buffer, BufferLayout, BufferType, Context,
-    Equation, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
+    Equation, GraphicsContext, Pipeline, PipelineParams, Shader, VertexAttribute, VertexFormat,
 };
+
+/// A callback function that can be used to compose an [`egui::PaintCallback`] for custom rendering
+/// with [`egui-miniquad`].
+///
+/// The callback is passed, the [`egui::PaintCallbackInfo`] and the [`GraphicsContext`] which can be used to
+/// access the OpenGL context.
+///
+/// # Example
+///
+/// See the [`custom3d_glow`](https://github.com/emilk/egui/blob/master/crates/egui_demo_app/src/apps/custom3d_wgpu.rs) demo source for a detailed usage example.
+pub struct CallbackFn {
+    #[allow(clippy::type_complexity)]
+    f: Box<dyn Fn(egui::PaintCallbackInfo, &mut GraphicsContext) + Sync + Send>,
+}
+
+impl CallbackFn {
+    pub fn new(
+        callback: impl Fn(egui::PaintCallbackInfo, &mut GraphicsContext) + Sync + Send + 'static,
+    ) -> Self {
+        let f = Box::new(callback);
+        CallbackFn { f }
+    }
+}
 
 pub struct Painter {
     pipeline: Pipeline,
@@ -203,7 +226,14 @@ impl Painter {
                             screen_size_in_pixels.1.round() as _,
                         ],
                     };
-                    callback.call(&info, ctx)
+
+                    if let Some(callback) = callback.callback.downcast_ref::<CallbackFn>() {
+                        (callback.f)(info, ctx);
+                    } else {
+                        eprintln!(
+                            "Warning: Unsupported render callback. Expected egui_miniquad::CallbackFn"
+                        );
+                    }
                 }
             }
         }
