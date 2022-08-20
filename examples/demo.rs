@@ -142,6 +142,21 @@ impl mq::EventHandler for Stage {
 }
 
 fn main() {
+    #[cfg(target_arch = "wasm32")]
+    {
+        // Make sure panics are logged using `console.error`.
+        console_error_panic_hook::set_once();
+
+        // Redirect tracing to console.log and friends:
+        tracing_wasm::set_as_global_default();
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Log to stdout (if you run with `RUST_LOG=debug`).
+        tracing_subscriber::fmt::init();
+    }
+
     let conf = mq::conf::Conf {
         high_dpi: true,
         window_width: 1200,
