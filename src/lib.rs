@@ -104,6 +104,7 @@ mod painter;
 // ----------------------------------------------------------------------------
 
 /// Required by `getrandom` crate.
+#[cfg(target_arch = "wasm32")]
 fn getrandom(buf: &mut [u8]) -> Result<(), getrandom::Error> {
     // TODO: higher quality random function, e.g. by defining this in JavaScript
     for value in buf {
@@ -111,6 +112,7 @@ fn getrandom(buf: &mut [u8]) -> Result<(), getrandom::Error> {
     }
     Ok(())
 }
+#[cfg(target_arch = "wasm32")]
 getrandom::register_custom_getrandom!(getrandom);
 
 // ----------------------------------------------------------------------------
