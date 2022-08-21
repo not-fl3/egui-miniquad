@@ -142,6 +142,12 @@ impl mq::EventHandler for Stage {
 }
 
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Log to stdout (if you run with `RUST_LOG=debug`).
+        tracing_subscriber::fmt::init();
+    }
+
     let conf = mq::conf::Conf {
         high_dpi: true,
         window_width: 1200,

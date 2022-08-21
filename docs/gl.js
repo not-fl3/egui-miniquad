@@ -1166,28 +1166,32 @@ var importObject = {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_BEGAN, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
+                    let relative_position = mouse_relative_position(touch.clientX, touch.clientY);
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_BEGAN, touch.identifier, relative_position.x, relative_position.y);
                 }
             });
             canvas.addEventListener("touchend", function (event) {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_ENDED, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
+                    let relative_position = mouse_relative_position(touch.clientX, touch.clientY);
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_ENDED, touch.identifier, relative_position.x, relative_position.y);
                 }
             });
             canvas.addEventListener("touchcancel", function (event) {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_CANCELED, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
+                    let relative_position = mouse_relative_position(touch.clientX, touch.clientY);
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_CANCELED, touch.identifier, relative_position.x, relative_position.y);
                 }
             });
             canvas.addEventListener("touchmove", function (event) {
                 event.preventDefault();
 
                 for (const touch of event.changedTouches) {
-                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_MOVED, touch.identifier, Math.floor(touch.clientX) * dpi_scale(), Math.floor(touch.clientY) * dpi_scale());
+                    let relative_position = mouse_relative_position(touch.clientX, touch.clientY);
+                    wasm_exports.touch(SAPP_EVENTTYPE_TOUCHES_MOVED, touch.identifier, relative_position.x, relative_position.y);
                 }
             });
 
@@ -1221,6 +1225,33 @@ var importObject = {
                     wasm_exports.on_clipboard_paste(msg, len);
                 }
             });
+
+            window.ondragover = function(e) {
+                e.preventDefault();
+            };
+
+            window.ondrop = async function(e) {
+                e.preventDefault();
+
+                wasm_exports.on_files_dropped_start();
+
+                for (let file of e.dataTransfer.files) {
+                    const nameLen = file.name.length;
+                    const nameVec = wasm_exports.allocate_vec_u8(nameLen);
+                    const nameHeap = new Uint8Array(wasm_memory.buffer, nameVec, nameLen);
+                    stringToUTF8(file.name, nameHeap, 0, nameLen);
+
+                    const fileBuf = await file.arrayBuffer();
+                    const fileLen = fileBuf.byteLength;
+                    const fileVec = wasm_exports.allocate_vec_u8(fileLen);
+                    const fileHeap = new Uint8Array(wasm_memory.buffer, fileVec, fileLen);
+                    fileHeap.set(new Uint8Array(fileBuf), 0);
+
+                    wasm_exports.on_file_dropped(nameVec, nameLen, fileVec, fileLen);
+                }
+
+                wasm_exports.on_files_dropped_finish();
+            };
 
             window.requestAnimationFrame(animation);
         },
