@@ -23,7 +23,8 @@ miniquad = { version = "0.3.12" }
 quad-url = "0.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { version = "0.2.7", features = ["js"] }
+getrandom = { version = "0.2.7", features = ["custom"] }
+quad-rand = "0.2.1"
 
 # https://github.com/not-fl3/miniquad/issues/172
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -39,8 +40,3 @@ opt-level = 2 # fast and small wasm
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tracing-subscriber = "0.3"
-
-# web:
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-console_error_panic_hook = "0.1.6"
-tracing-wasm = "0.2"
