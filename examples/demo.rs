@@ -67,10 +67,6 @@ impl mq::EventHandler for Stage {
             }
 
             egui::Window::new("Color Test").show(egui_ctx, |ui| {
-                ui.colored_label(
-                    egui::Color32::RED,
-                    "NOTE: egui-miniquad does not currently pass the color test!",
-                );
                 egui::ScrollArea::both()
                     .auto_shrink([false; 2])
                     .show(ui, |ui| {
