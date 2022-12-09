@@ -1,4 +1,5 @@
 # Unreleased
+* Update egui to `0.20.0`.
 
 # 0.12.0 - 2022-08-21
 * Update egui to `0.19.0`
