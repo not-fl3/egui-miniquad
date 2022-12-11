@@ -1,6 +1,6 @@
 [package]
 name = "egui-miniquad"
-version = "0.12.0"
+version = "0.13.0"
 authors = [
   "Logachev Fedor <not.fl3@gmail.com>",
   "Emil Ernerfeldt <emil.ernerfeldt@gmail.com>",
