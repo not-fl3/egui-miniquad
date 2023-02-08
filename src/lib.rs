@@ -243,20 +243,15 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_motion_event(&mut self, x: f32, y: f32) {
         let pos = egui::pos2(
-            x as f32 / self.egui_ctx.pixels_per_point(),
-            y as f32 / self.egui_ctx.pixels_per_point(),
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
         );
         self.egui_input.events.push(egui::Event::PointerMoved(pos))
     }
 
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
-        let delta = egui::vec2(dx, dy)
-            * if cfg!(target_arch = "wasm32") {
-                1.0
-            } else {
-                8.0
-            };
+        let delta = egui::vec2(dx, dy);
 
         let event = if self.egui_input.modifiers.ctrl {
             // Treat as zoom instead:
@@ -276,8 +271,8 @@ impl EguiMq {
         y: f32,
     ) {
         let pos = egui::pos2(
-            x as f32 / self.egui_ctx.pixels_per_point(),
-            y as f32 / self.egui_ctx.pixels_per_point(),
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
         );
         let button = to_egui_button(mb);
         self.egui_input.events.push(egui::Event::PointerButton {
@@ -297,8 +292,8 @@ impl EguiMq {
         y: f32,
     ) {
         let pos = egui::pos2(
-            x as f32 / self.egui_ctx.pixels_per_point(),
-            y as f32 / self.egui_ctx.pixels_per_point(),
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
         );
         let button = to_egui_button(mb);
 
@@ -345,6 +340,7 @@ impl EguiMq {
                 key,
                 pressed: true,
                 modifiers,
+                repeat: false, // egui will set this for us
             })
         }
     }
@@ -358,6 +354,7 @@ impl EguiMq {
                 key,
                 pressed: false,
                 modifiers,
+                repeat: false, // egui will set this for us
             })
         }
     }

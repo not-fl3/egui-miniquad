@@ -118,7 +118,7 @@ impl Painter {
                     }
                 }
             } else {
-                eprintln!("Failed to find egui texture {:?}", tex_id);
+                eprintln!("Failed to find egui texture {tex_id:?}");
             }
         } else {
             // New texture (or full update).
@@ -274,7 +274,7 @@ impl Painter {
                     if let Some(tex) = self.textures.get(&mesh.texture_id) {
                         *tex
                     } else {
-                        eprintln!("Texture {:?} not found", id);
+                        eprintln!("Texture {id:?} not found");
                         continue;
                     }
                 }
@@ -292,10 +292,10 @@ impl Painter {
             let clip_max_y = pixels_per_point * clip_rect.max.y;
 
             // Make sure clip rect can fit withing an `u32`:
-            let clip_min_x = clip_min_x.clamp(0.0, width_in_pixels as f32);
-            let clip_min_y = clip_min_y.clamp(0.0, height_in_pixels as f32);
-            let clip_max_x = clip_max_x.clamp(clip_min_x, width_in_pixels as f32);
-            let clip_max_y = clip_max_y.clamp(clip_min_y, height_in_pixels as f32);
+            let clip_min_x = clip_min_x.clamp(0.0, width_in_pixels);
+            let clip_min_y = clip_min_y.clamp(0.0, height_in_pixels);
+            let clip_max_x = clip_max_x.clamp(clip_min_x, width_in_pixels);
+            let clip_max_y = clip_max_y.clamp(clip_min_y, height_in_pixels);
 
             let clip_min_x = clip_min_x.round() as u32;
             let clip_min_y = clip_min_y.round() as u32;
