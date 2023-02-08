@@ -1,5 +1,9 @@
 # Unreleased
 
+# Unreleased
+* Update egui to `0.21.0`.
+* Fix scroll speed (it was way too fast).
+
 # 0.13.0 - 2022-12-11
 * Update egui to `0.20.0`.
 
