@@ -251,12 +251,7 @@ impl EguiMq {
 
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
-        let delta = egui::vec2(dx, dy)
-            * if cfg!(target_arch = "wasm32") {
-                1.0
-            } else {
-                8.0
-            };
+        let delta = egui::vec2(dx, dy);
 
         let event = if self.egui_input.modifiers.ctrl {
             // Treat as zoom instead:
