@@ -243,8 +243,8 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_motion_event(&mut self, x: f32, y: f32) {
         let pos = egui::pos2(
-            x as f32 / self.egui_ctx.pixels_per_point(),
-            y as f32 / self.egui_ctx.pixels_per_point(),
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
         );
         self.egui_input.events.push(egui::Event::PointerMoved(pos))
     }
@@ -276,8 +276,8 @@ impl EguiMq {
         y: f32,
     ) {
         let pos = egui::pos2(
-            x as f32 / self.egui_ctx.pixels_per_point(),
-            y as f32 / self.egui_ctx.pixels_per_point(),
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
         );
         let button = to_egui_button(mb);
         self.egui_input.events.push(egui::Event::PointerButton {
@@ -297,8 +297,8 @@ impl EguiMq {
         y: f32,
     ) {
         let pos = egui::pos2(
-            x as f32 / self.egui_ctx.pixels_per_point(),
-            y as f32 / self.egui_ctx.pixels_per_point(),
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
         );
         let button = to_egui_button(mb);
 
