@@ -345,6 +345,7 @@ impl EguiMq {
                 key,
                 pressed: true,
                 modifiers,
+                repeat: false, // egui will set this for us
             })
         }
     }
@@ -358,6 +359,7 @@ impl EguiMq {
                 key,
                 pressed: false,
                 modifiers,
+                repeat: false, // egui will set this for us
             })
         }
     }
