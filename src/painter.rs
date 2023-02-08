@@ -118,7 +118,7 @@ impl Painter {
                     }
                 }
             } else {
-                eprintln!("Failed to find egui texture {:?}", tex_id);
+                eprintln!("Failed to find egui texture {tex_id:?}");
             }
         } else {
             // New texture (or full update).
@@ -274,7 +274,7 @@ impl Painter {
                     if let Some(tex) = self.textures.get(&mesh.texture_id) {
                         *tex
                     } else {
-                        eprintln!("Texture {:?} not found", id);
+                        eprintln!("Texture {id:?} not found");
                         continue;
                     }
                 }
