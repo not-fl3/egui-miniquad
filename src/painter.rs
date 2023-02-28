@@ -88,6 +88,10 @@ impl Painter {
         delta: &egui::epaint::ImageDelta,
     ) {
         let [w, h] = delta.image.size();
+        let filter = match delta.options.magnification {
+            egui::TextureFilter::Nearest => miniquad::FilterMode::Nearest,
+            egui::TextureFilter::Linear => miniquad::FilterMode::Linear,
+        };
 
         if let Some([x, y]) = delta.pos {
             // Partial update
@@ -125,7 +129,7 @@ impl Painter {
             let params = miniquad::TextureParams {
                 format: miniquad::TextureFormat::RGBA8,
                 wrap: miniquad::TextureWrap::Clamp,
-                filter: miniquad::FilterMode::Linear,
+                filter,
                 width: w as _,
                 height: h as _,
             };
