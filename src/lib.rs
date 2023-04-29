@@ -202,6 +202,7 @@ impl EguiMq {
             events: _,                    // no screen reader
             text_cursor_pos: _,           // no IME
             mutable_text_under_cursor: _, // no IME
+            ..
         } = platform_output;
 
         if let Some(url) = open_url {
