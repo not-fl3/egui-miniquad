@@ -1,6 +1,6 @@
 use egui::epaint::Vertex;
 use miniquad::{
-    Bindings, BlendFactor, BlendState, BlendValue, BufferLayout, BufferSource, BufferType,
+    Backend, Bindings, BlendFactor, BlendState, BlendValue, BufferLayout, BufferSource, BufferType,
     BufferUsage, Equation, Pipeline, PipelineParams, RawId, RenderingBackend, ShaderSource,
     TextureId, UniformsSource, VertexAttribute, VertexFormat,
 };
@@ -36,14 +36,14 @@ pub struct Painter {
 
 impl Painter {
     pub fn new(ctx: &mut dyn RenderingBackend) -> Painter {
-        let shader = ctx.new_shader(
-            ShaderSource {
-                glsl_vertex: Some(shader::VERTEX),
-                glsl_fragment: Some(shader::FRAGMENT),
-                metal_shader: None,
+        let source = match ctx.info().backend {
+            Backend::Metal => unimplemented!(),
+            Backend::OpenGl => ShaderSource::Glsl {
+                vertex: shader::VERTEX,
+                fragment: shader::FRAGMENT,
             },
-            shader::meta(),
-        );
+        };
+        let shader = ctx.new_shader(source, shader::meta());
 
         let pipeline = ctx.new_pipeline_with_params(
             &[BufferLayout::default()],
@@ -138,9 +138,11 @@ impl Painter {
             let params = miniquad::TextureParams {
                 format: miniquad::TextureFormat::RGBA8,
                 wrap: miniquad::TextureWrap::Clamp,
-                filter,
+                min_filter: filter,
+                mag_filter: filter,
                 width: w as _,
                 height: h as _,
+                ..Default::default()
             };
 
             let texture = match &delta.image {
