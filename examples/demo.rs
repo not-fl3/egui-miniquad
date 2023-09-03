@@ -6,32 +6,37 @@ struct Stage {
     egui_demo_windows: egui_demo_lib::DemoWindows,
     color_test: egui_demo_lib::ColorTest,
     pixels_per_point: f32,
+    mq_ctx: Box<dyn mq::RenderingBackend>,
 }
 
 impl Stage {
-    fn new(ctx: &mut mq::Context) -> Self {
+    fn new() -> Self {
+        let mut mq_ctx = mq::window::new_rendering_backend();
+
         Self {
-            egui_mq: egui_mq::EguiMq::new(ctx),
+            egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
             show_egui_demo_windows: true,
             egui_demo_windows: Default::default(),
             color_test: Default::default(),
-            pixels_per_point: ctx.dpi_scale(),
+            pixels_per_point: mq::window::dpi_scale(),
+            mq_ctx,
         }
     }
 }
 
 impl mq::EventHandler for Stage {
-    fn update(&mut self, _ctx: &mut mq::Context) {}
+    fn update(&mut self) {}
 
-    fn draw(&mut self, mq_ctx: &mut mq::Context) {
-        mq_ctx.clear(Some((1., 1., 1., 1.)), None, None);
-        mq_ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
-        mq_ctx.end_render_pass();
+    fn draw(&mut self) {
+        self.mq_ctx.clear(Some((1., 1., 1., 1.)), None, None);
+        self.mq_ctx
+            .begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
+        self.mq_ctx.end_render_pass();
 
-        let dpi_scale = mq_ctx.dpi_scale();
+        let dpi_scale = mq::window::dpi_scale();
 
         // Run the UI code:
-        self.egui_mq.run(mq_ctx, |_mq_ctx, egui_ctx| {
+        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
             if self.show_egui_demo_windows {
                 self.egui_demo_windows.ui(egui_ctx);
             }
@@ -77,62 +82,38 @@ impl mq::EventHandler for Stage {
 
         // Draw things behind egui here
 
-        self.egui_mq.draw(mq_ctx);
+        self.egui_mq.draw(&mut *self.mq_ctx);
 
         // Draw things in front of egui here
 
-        mq_ctx.commit_frame();
+        self.mq_ctx.commit_frame();
     }
 
-    fn mouse_motion_event(&mut self, _: &mut mq::Context, x: f32, y: f32) {
+    fn mouse_motion_event(&mut self, x: f32, y: f32) {
         self.egui_mq.mouse_motion_event(x, y);
     }
 
-    fn mouse_wheel_event(&mut self, _: &mut mq::Context, dx: f32, dy: f32) {
+    fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
         self.egui_mq.mouse_wheel_event(dx, dy);
     }
 
-    fn mouse_button_down_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        mb: mq::MouseButton,
-        x: f32,
-        y: f32,
-    ) {
-        self.egui_mq.mouse_button_down_event(ctx, mb, x, y);
+    fn mouse_button_down_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.egui_mq.mouse_button_down_event(mb, x, y);
     }
 
-    fn mouse_button_up_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        mb: mq::MouseButton,
-        x: f32,
-        y: f32,
-    ) {
-        self.egui_mq.mouse_button_up_event(ctx, mb, x, y);
+    fn mouse_button_up_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.egui_mq.mouse_button_up_event(mb, x, y);
     }
 
-    fn char_event(
-        &mut self,
-        _ctx: &mut mq::Context,
-        character: char,
-        _keymods: mq::KeyMods,
-        _repeat: bool,
-    ) {
+    fn char_event(&mut self, character: char, _keymods: mq::KeyMods, _repeat: bool) {
         self.egui_mq.char_event(character);
     }
 
-    fn key_down_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        keycode: mq::KeyCode,
-        keymods: mq::KeyMods,
-        _repeat: bool,
-    ) {
-        self.egui_mq.key_down_event(ctx, keycode, keymods);
+    fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods, _repeat: bool) {
+        self.egui_mq.key_down_event(keycode, keymods);
     }
 
-    fn key_up_event(&mut self, _ctx: &mut mq::Context, keycode: mq::KeyCode, keymods: mq::KeyMods) {
+    fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
         self.egui_mq.key_up_event(keycode, keymods);
     }
 }
@@ -150,5 +131,5 @@ fn main() {
         window_height: 1024,
         ..Default::default()
     };
-    mq::start(conf, |mut ctx| Box::new(Stage::new(&mut ctx)));
+    mq::start(conf, || Box::new(Stage::new()));
 }
