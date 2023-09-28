@@ -1,4 +1,5 @@
 # Unreleased
+* Update to egui `0.23.0`
 
 # 0.14.0 - 2023-02-08
 * Update egui to `0.21.0`.
