@@ -140,14 +140,12 @@ pub struct EguiMq {
 impl EguiMq {
     pub fn new(mq_ctx: &mut dyn mq::RenderingBackend) -> Self {
         let native_dpi_scale = miniquad::window::dpi_scale();
+
         Self {
             native_dpi_scale,
             egui_ctx: egui::Context::default(),
             painter: painter::Painter::new(mq_ctx),
-            egui_input: egui::RawInput {
-                pixels_per_point: Some(native_dpi_scale),
-                ..Default::default()
-            },
+            egui_input: egui::RawInput::default(),
             #[cfg(target_os = "macos")]
             clipboard: init_clipboard(),
             shapes: None,
@@ -173,7 +171,11 @@ impl EguiMq {
         if self.native_dpi_scale != miniquad::window::dpi_scale() {
             // DPI scale change (maybe new monitor?). Tell egui to change:
             self.native_dpi_scale = miniquad::window::dpi_scale();
-            self.egui_input.pixels_per_point = Some(self.native_dpi_scale);
+            self.egui_input
+                .viewports
+                .get_mut(&self.egui_input.viewport_id)
+                .unwrap()
+                .native_pixels_per_point = Some(self.native_dpi_scale);
         }
 
         let full_output = self
@@ -182,9 +184,10 @@ impl EguiMq {
 
         let egui::FullOutput {
             platform_output,
-            repaint_after: _, // miniquad always runs at full framerate
             textures_delta,
             shapes,
+            pixels_per_point, //TODO not handling change in pixels per point (check zooming in/out behavior in egui)
+            viewport_output,
         } = full_output;
 
         if self.shapes.is_some() {
@@ -226,7 +229,7 @@ impl EguiMq {
     /// Must be called after `end_frame`.
     pub fn draw(&mut self, mq_ctx: &mut dyn mq::RenderingBackend) {
         if let Some(shapes) = self.shapes.take() {
-            let meshes = self.egui_ctx.tessellate(shapes);
+            let meshes = self.egui_ctx.tessellate(shapes, self.native_dpi_scale);
             self.painter.paint_and_update_textures(
                 mq_ctx,
                 meshes,

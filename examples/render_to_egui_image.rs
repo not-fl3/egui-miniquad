@@ -181,7 +181,8 @@ impl mq::EventHandler for Stage {
         // Run the UI code:
         self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
-                let img = egui::Image::from_texture(SizedTexture::new(egui_texture_id, [140.0, 140.0]));
+                let img =
+                    egui::Image::from_texture(SizedTexture::new(egui_texture_id, [140.0, 140.0]));
                 ui.add(img);
                 #[cfg(not(target_arch = "wasm32"))]
                 {
