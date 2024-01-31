@@ -201,7 +201,7 @@ impl EguiMq {
             open_url,
             copied_text,
             events: _,                    // no screen reader
-            text_cursor_pos: _,           // no IME
+            ime: _,                       // no IME
             mutable_text_under_cursor: _, // no IME
             ..
         } = platform_output;
@@ -326,6 +326,7 @@ impl EguiMq {
                 pressed: true,
                 modifiers,
                 repeat: false, // egui will set this for us
+                physical_key: None, // unsupported
             })
         }
     }
@@ -340,6 +341,7 @@ impl EguiMq {
                 pressed: false,
                 modifiers,
                 repeat: false, // egui will set this for us
+                physical_key: None, // unsupported
             })
         }
     }
