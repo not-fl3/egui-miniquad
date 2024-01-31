@@ -1,3 +1,4 @@
+use egui::load::SizedTexture;
 use glam::{vec3, EulerRot, Mat4};
 use {egui_miniquad as egui_mq, miniquad as mq};
 
@@ -94,10 +95,9 @@ impl Stage {
 
         let offscreen_shader = mq_ctx
             .new_shader(
-                mq::ShaderSource {
-                    glsl_vertex: Some(offscreen_shader::VERTEX),
-                    glsl_fragment: Some(offscreen_shader::FRAGMENT),
-                    metal_shader: None,
+                mq::ShaderSource::Glsl {
+                    vertex: offscreen_shader::VERTEX,
+                    fragment: offscreen_shader::FRAGMENT,
                 },
                 offscreen_shader::meta(),
             )
@@ -181,7 +181,8 @@ impl mq::EventHandler for Stage {
         // Run the UI code:
         self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
-                ui.image(egui_texture_id, egui::Vec2::new(140.0, 140.0));
+                let img = egui::Image::from_texture(SizedTexture::new(egui_texture_id, [140.0, 140.0]));
+                ui.add(img);
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     if ui.button("Quit").clicked() {
