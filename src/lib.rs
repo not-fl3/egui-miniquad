@@ -127,7 +127,10 @@ use copypasta::ClipboardProvider;
 ///
 ///
 pub struct EguiMq {
+    /// The DPI as reported by miniquad.
     native_dpi_scale: f32,
+    /// Pixels per point from egui. Can differ from native DPI because egui allows zooming.
+    pixels_per_point: f32,
     egui_ctx: egui::Context,
     egui_input: egui::RawInput,
     painter: painter::Painter,
@@ -143,6 +146,7 @@ impl EguiMq {
 
         Self {
             native_dpi_scale,
+            pixels_per_point: native_dpi_scale,
             egui_ctx: egui::Context::default(),
             painter: painter::Painter::new(mq_ctx),
             egui_input: egui::RawInput::default(),
@@ -186,14 +190,15 @@ impl EguiMq {
             platform_output,
             textures_delta,
             shapes,
-            pixels_per_point, //TODO not handling change in pixels per point (check zooming in/out behavior in egui)
-            viewport_output,
+            pixels_per_point,
+            viewport_output: _viewport_output, // we only support one viewport
         } = full_output;
 
         if self.shapes.is_some() {
             eprintln!("Egui contents not drawn. You need to call `draw` after calling `run`");
         }
         self.shapes = Some(shapes);
+        self.pixels_per_point = pixels_per_point;
         self.textures_delta.append(textures_delta);
 
         let egui::PlatformOutput {
@@ -229,7 +234,7 @@ impl EguiMq {
     /// Must be called after `end_frame`.
     pub fn draw(&mut self, mq_ctx: &mut dyn mq::RenderingBackend) {
         if let Some(shapes) = self.shapes.take() {
-            let meshes = self.egui_ctx.tessellate(shapes, self.native_dpi_scale);
+            let meshes = self.egui_ctx.tessellate(shapes, self.pixels_per_point);
             self.painter.paint_and_update_textures(
                 mq_ctx,
                 meshes,
