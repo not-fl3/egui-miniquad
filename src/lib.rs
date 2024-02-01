@@ -330,7 +330,7 @@ impl EguiMq {
                 key,
                 pressed: true,
                 modifiers,
-                repeat: false, // egui will set this for us
+                repeat: false,      // egui will set this for us
                 physical_key: None, // unsupported
             })
         }
@@ -345,7 +345,7 @@ impl EguiMq {
                 key,
                 pressed: false,
                 modifiers,
-                repeat: false, // egui will set this for us
+                repeat: false,      // egui will set this for us
                 physical_key: None, // unsupported
             })
         }
