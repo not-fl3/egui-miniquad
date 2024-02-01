@@ -97,6 +97,19 @@ pub fn egui_key_from_mq_key(key: mq::KeyCode) -> Option<egui::Key> {
         mq::KeyCode::Y => egui::Key::Y,
         mq::KeyCode::Z => egui::Key::Z,
 
-        _ => return None,
+        mq::KeyCode::Comma => egui::Key::Comma,
+        mq::KeyCode::Backslash => egui::Key::Backslash,
+        mq::KeyCode::LeftBracket => egui::Key::OpenBracket,
+        mq::KeyCode::RightBracket => egui::Key::CloseBracket,
+        mq::KeyCode::GraveAccent => egui::Key::Backtick,
+        mq::KeyCode::Minus => egui::Key::Minus,
+        mq::KeyCode::Period => egui::Key::Period,
+        mq::KeyCode::Equal => egui::Key::Equals,
+        mq::KeyCode::Semicolon => egui::Key::Semicolon,
+
+        _other => {
+            // mq::trace!("egui-miniquad: Unhandled key: {:?}", _other);
+            return None;
+        }
     })
 }
