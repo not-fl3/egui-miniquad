@@ -18,7 +18,7 @@ impl Stage {
             show_egui_demo_windows: true,
             egui_demo_windows: Default::default(),
             color_test: Default::default(),
-            zoom_factor: mq::window::dpi_scale(),
+            zoom_factor: 1.0,
             mq_ctx,
         }
     }
@@ -52,19 +52,21 @@ impl mq::EventHandler for Stage {
                     ui.label("Physical pixels per each logical 'point':");
                     ui.label(format!("native: {:.2}", dpi_scale));
                     ui.label(format!("egui:   {:.2}", ui.ctx().pixels_per_point()));
+                    ui.label("Current zoom factor:");
                     ui.add(
                         egui::Slider::new(&mut self.zoom_factor, 0.75..=3.0).logarithmic(true),
                     )
                     .on_hover_text("Override egui zoom factor manually (changes effective pixels per point)");
                     if ui.button("Reset").clicked() {
-                        self.zoom_factor = dpi_scale;
+                        self.zoom_factor = 1.0;
                     }
 
+                    ui.label("By default, egui allows zooming with\nCtrl/Cmd and +/-/0");
                     // Creating a checkbox that directly mutates the egui context's options causes a
                     // freeze so we copy the state out, possibly mutate it with the checkbox, and
                     // then copy it back in.
                     let mut zoom_with_keyboard = egui_ctx.options(|o| o.zoom_with_keyboard);
-                    ui.checkbox(&mut zoom_with_keyboard, "Egui zoom with keyboard (Ctrl/Cmd and +/-/0)");
+                    ui.checkbox(&mut zoom_with_keyboard, "Allow egui zoom with keyboard");
                     egui_ctx.options_mut(|o|
                         o.zoom_with_keyboard = zoom_with_keyboard
                     );
