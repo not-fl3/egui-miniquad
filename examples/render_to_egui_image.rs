@@ -103,7 +103,7 @@ impl Stage {
             )
             .unwrap();
 
-        let offscreen_pipeline = mq_ctx.new_pipeline_with_params(
+        let offscreen_pipeline = mq_ctx.new_pipeline(
             &[mq::BufferLayout {
                 stride: 36,
                 ..Default::default()

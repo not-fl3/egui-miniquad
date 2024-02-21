@@ -45,7 +45,7 @@ impl Painter {
         };
         let shader = ctx.new_shader(source, shader::meta());
 
-        let pipeline = ctx.new_pipeline_with_params(
+        let pipeline = ctx.new_pipeline(
             &[BufferLayout::default()],
             &[
                 VertexAttribute::new("a_pos", VertexFormat::Float2),

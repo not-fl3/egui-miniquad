@@ -5,6 +5,7 @@ struct Stage {
     show_egui_demo_windows: bool,
     egui_demo_windows: egui_demo_lib::DemoWindows,
     color_test: egui_demo_lib::ColorTest,
+    prev_egui_zoom_factor: f32,
     zoom_factor: f32,
     mq_ctx: Box<dyn mq::RenderingBackend>,
 }
@@ -18,6 +19,7 @@ impl Stage {
             show_egui_demo_windows: true,
             egui_demo_windows: Default::default(),
             color_test: Default::default(),
+            prev_egui_zoom_factor: 1.0,
             zoom_factor: 1.0,
             mq_ctx,
         }
@@ -41,8 +43,15 @@ impl mq::EventHandler for Stage {
                 self.egui_demo_windows.ui(egui_ctx);
             }
 
-            // zoom factor could have been changed by the user in egui using Ctrl/Cmd and -/+/0
-            self.zoom_factor = egui_ctx.zoom_factor();
+            // zoom factor could have been changed by the user in egui using Ctrl/Cmd and -/+/0,
+            // but it could also be in the middle of being changed by us using the slider. So we
+            // only allow egui's zoom to override our zoom if the egui zoom is different from what
+            // we saw last time (meaning the user has changed it).
+            let curr_egui_zoom = egui_ctx.zoom_factor();
+            if self.prev_egui_zoom_factor != curr_egui_zoom {
+                self.zoom_factor = curr_egui_zoom;
+            }
+            self.prev_egui_zoom_factor = curr_egui_zoom;
 
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
                 egui::widgets::global_dark_light_mode_buttons(ui);
