@@ -1,11 +1,7 @@
 use miniquad as mq;
 
-pub fn on_frame_start(
-    egui_input: &mut egui::RawInput,
-    equi_ctx: &egui::Context,
-    mq_ctx: &mq::Context,
-) {
-    let screen_size_in_pixels = mq_ctx.screen_size();
+pub fn on_frame_start(egui_input: &mut egui::RawInput, equi_ctx: &egui::Context) {
+    let screen_size_in_pixels = mq::window::screen_size();
     let screen_size_in_points =
         egui::vec2(screen_size_in_pixels.0, screen_size_in_pixels.1) / equi_ctx.pixels_per_point();
     egui_input.screen_rect = Some(egui::Rect::from_min_size(
@@ -101,6 +97,19 @@ pub fn egui_key_from_mq_key(key: mq::KeyCode) -> Option<egui::Key> {
         mq::KeyCode::Y => egui::Key::Y,
         mq::KeyCode::Z => egui::Key::Z,
 
-        _ => return None,
+        mq::KeyCode::Comma => egui::Key::Comma,
+        mq::KeyCode::Backslash => egui::Key::Backslash,
+        mq::KeyCode::LeftBracket => egui::Key::OpenBracket,
+        mq::KeyCode::RightBracket => egui::Key::CloseBracket,
+        mq::KeyCode::GraveAccent => egui::Key::Backtick,
+        mq::KeyCode::Minus => egui::Key::Minus,
+        mq::KeyCode::Period => egui::Key::Period,
+        mq::KeyCode::Equal => egui::Key::Equals,
+        mq::KeyCode::Semicolon => egui::Key::Semicolon,
+
+        _other => {
+            // mq::trace!("egui-miniquad: Unhandled key: {:?}", _other);
+            return None;
+        }
     })
 }

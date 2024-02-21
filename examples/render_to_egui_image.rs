@@ -1,3 +1,4 @@
+use egui::load::SizedTexture;
 use glam::{vec3, EulerRot, Mat4};
 use {egui_miniquad as egui_mq, miniquad as mq};
 
@@ -8,30 +9,27 @@ struct Stage {
     offscreen_pass: mq::RenderPass,
     rx: f32,
     ry: f32,
+    mq_ctx: Box<dyn mq::RenderingBackend>,
 }
 
 impl Stage {
-    pub fn new(ctx: &mut mq::Context) -> Stage {
-        let color_img = mq::Texture::new_render_texture(
-            ctx,
-            mq::TextureParams {
-                width: 256,
-                height: 256,
-                format: mq::TextureFormat::RGBA8,
-                ..Default::default()
-            },
-        );
-        let depth_img = mq::Texture::new_render_texture(
-            ctx,
-            mq::TextureParams {
-                width: 256,
-                height: 256,
-                format: mq::TextureFormat::Depth,
-                ..Default::default()
-            },
-        );
+    pub fn new() -> Stage {
+        let mut mq_ctx = mq::window::new_rendering_backend();
 
-        let offscreen_pass = mq::RenderPass::new(ctx, color_img, depth_img);
+        let color_img = mq_ctx.new_render_texture(mq::TextureParams {
+            width: 256,
+            height: 256,
+            format: mq::TextureFormat::RGBA8,
+            ..Default::default()
+        });
+        let depth_img = mq_ctx.new_render_texture(mq::TextureParams {
+            width: 256,
+            height: 256,
+            format: mq::TextureFormat::Depth,
+            ..Default::default()
+        });
+
+        let offscreen_pass = mq_ctx.new_render_pass(color_img, Some(depth_img));
 
         #[rustfmt::skip]
         let vertices: &[f32] = &[
@@ -67,7 +65,11 @@ impl Stage {
              1.0,  1.0, -1.0,    1.0, 0.0, 0.5, 1.0,     0.0, 1.0
         ];
 
-        let vertex_buffer = mq::Buffer::immutable(ctx, mq::BufferType::VertexBuffer, vertices);
+        let vertex_buffer = mq_ctx.new_buffer(
+            mq::BufferType::VertexBuffer,
+            mq::BufferUsage::Immutable,
+            mq::BufferSource::slice(vertices),
+        );
 
         #[rustfmt::skip]
         let indices: &[u16] = &[
@@ -79,7 +81,11 @@ impl Stage {
             22, 21, 20,  23, 22, 20
         ];
 
-        let index_buffer = mq::Buffer::immutable(ctx, mq::BufferType::IndexBuffer, indices);
+        let index_buffer = mq_ctx.new_buffer(
+            mq::BufferType::IndexBuffer,
+            mq::BufferUsage::Immutable,
+            mq::BufferSource::slice(indices),
+        );
 
         let offscreen_bind = mq::Bindings {
             vertex_buffers: vec![vertex_buffer],
@@ -87,16 +93,17 @@ impl Stage {
             images: vec![],
         };
 
-        let offscreen_shader = mq::Shader::new(
-            ctx,
-            offscreen_shader::VERTEX,
-            offscreen_shader::FRAGMENT,
-            offscreen_shader::meta(),
-        )
-        .unwrap();
+        let offscreen_shader = mq_ctx
+            .new_shader(
+                mq::ShaderSource::Glsl {
+                    vertex: offscreen_shader::VERTEX,
+                    fragment: offscreen_shader::FRAGMENT,
+                },
+                offscreen_shader::meta(),
+            )
+            .unwrap();
 
-        let offscreen_pipeline = mq::Pipeline::with_params(
-            ctx,
+        let offscreen_pipeline = mq_ctx.new_pipeline(
             &[mq::BufferLayout {
                 stride: 36,
                 ..Default::default()
@@ -114,21 +121,22 @@ impl Stage {
         );
 
         Stage {
-            egui_mq: egui_mq::EguiMq::new(ctx),
+            egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
             offscreen_pipeline,
             offscreen_bind,
             offscreen_pass,
             rx: 0.,
             ry: 0.,
+            mq_ctx,
         }
     }
 }
 
 impl mq::EventHandler for Stage {
-    fn update(&mut self, _ctx: &mut mq::Context) {}
+    fn update(&mut self) {}
 
-    fn draw(&mut self, ctx: &mut mq::Context) {
-        let (width, height) = ctx.screen_size();
+    fn draw(&mut self) {
+        let (width, height) = mq::window::screen_size();
         let proj = Mat4::perspective_rh_gl(60.0f32.to_radians(), width / height, 0.01, 10.0);
         let view = Mat4::look_at_rh(
             vec3(0.0, 1.5, 3.0),
@@ -146,30 +154,36 @@ impl mq::EventHandler for Stage {
         };
 
         // the offscreen pass, rendering an rotating, untextured cube into a render target image
-        ctx.begin_pass(
-            self.offscreen_pass,
+        self.mq_ctx.begin_pass(
+            Some(self.offscreen_pass),
             mq::PassAction::clear_color(1.0, 1.0, 1.0, 1.),
         );
-        ctx.apply_pipeline(&self.offscreen_pipeline);
-        ctx.apply_bindings(&self.offscreen_bind);
-        ctx.apply_uniforms(&vs_params);
-        ctx.draw(0, 36, 1);
-        ctx.end_render_pass();
+        self.mq_ctx.apply_pipeline(&self.offscreen_pipeline);
+        self.mq_ctx.apply_bindings(&self.offscreen_bind);
+        self.mq_ctx
+            .apply_uniforms(mq::UniformsSource::table(&vs_params));
+        self.mq_ctx.draw(0, 36, 1);
+        self.mq_ctx.end_render_pass();
 
         // Extract texture from offscreen render pass
-        let mq_texture = self.offscreen_pass.texture(ctx);
+        let mq_texture = self.mq_ctx.render_pass_texture(self.offscreen_pass);
 
         // create egui TextureId from Miniquad GL texture Id
-        let egui_texture_id = egui::TextureId::User(mq_texture.gl_internal_id() as u64);
+        let raw_id = match unsafe { self.mq_ctx.texture_raw_id(mq_texture) } {
+            mq::RawId::OpenGl(id) => id as u64,
+        };
+        let egui_texture_id = egui::TextureId::User(raw_id);
 
-        ctx.clear(Some((1., 1., 1., 1.)), None, None);
-        ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
-        ctx.end_render_pass();
+        self.mq_ctx
+            .begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
+        self.mq_ctx.end_render_pass();
 
         // Run the UI code:
-        self.egui_mq.run(ctx, |_mq_ctx, egui_ctx| {
+        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
-                ui.image(egui_texture_id, egui::Vec2::new(140.0, 140.0));
+                let img =
+                    egui::Image::from_texture(SizedTexture::new(egui_texture_id, [140.0, 140.0]));
+                ui.add(img);
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     if ui.button("Quit").clicked() {
@@ -181,62 +195,38 @@ impl mq::EventHandler for Stage {
 
         // Draw things behind egui here
 
-        self.egui_mq.draw(ctx);
+        self.egui_mq.draw(&mut *self.mq_ctx);
 
         // Draw things in front of egui here
 
-        ctx.commit_frame();
+        self.mq_ctx.commit_frame();
     }
 
-    fn mouse_motion_event(&mut self, _: &mut mq::Context, x: f32, y: f32) {
+    fn mouse_motion_event(&mut self, x: f32, y: f32) {
         self.egui_mq.mouse_motion_event(x, y);
     }
 
-    fn mouse_wheel_event(&mut self, _: &mut mq::Context, dx: f32, dy: f32) {
+    fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
         self.egui_mq.mouse_wheel_event(dx, dy);
     }
 
-    fn mouse_button_down_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        mb: mq::MouseButton,
-        x: f32,
-        y: f32,
-    ) {
-        self.egui_mq.mouse_button_down_event(ctx, mb, x, y);
+    fn mouse_button_down_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.egui_mq.mouse_button_down_event(mb, x, y);
     }
 
-    fn mouse_button_up_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        mb: mq::MouseButton,
-        x: f32,
-        y: f32,
-    ) {
-        self.egui_mq.mouse_button_up_event(ctx, mb, x, y);
+    fn mouse_button_up_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.egui_mq.mouse_button_up_event(mb, x, y);
     }
 
-    fn char_event(
-        &mut self,
-        _ctx: &mut mq::Context,
-        character: char,
-        _keymods: mq::KeyMods,
-        _repeat: bool,
-    ) {
+    fn char_event(&mut self, character: char, _keymods: mq::KeyMods, _repeat: bool) {
         self.egui_mq.char_event(character);
     }
 
-    fn key_down_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        keycode: mq::KeyCode,
-        keymods: mq::KeyMods,
-        _repeat: bool,
-    ) {
-        self.egui_mq.key_down_event(ctx, keycode, keymods);
+    fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods, _repeat: bool) {
+        self.egui_mq.key_down_event(keycode, keymods);
     }
 
-    fn key_up_event(&mut self, _ctx: &mut mq::Context, keycode: mq::KeyCode, keymods: mq::KeyMods) {
+    fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
         self.egui_mq.key_up_event(keycode, keymods);
     }
 }
@@ -246,7 +236,7 @@ fn main() {
         high_dpi: true,
         ..Default::default()
     };
-    mq::start(conf, |mut ctx| Box::new(Stage::new(&mut ctx)));
+    mq::start(conf, || Box::new(Stage::new()));
 }
 
 mod offscreen_shader {
