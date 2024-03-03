@@ -362,7 +362,7 @@ impl EguiMq {
     }
 
     #[cfg(target_os = "macos")]
-    fn set_clipboard(&mut self, _mq_ctx: &mut mq::Context, text: String) {
+    fn set_clipboard(&mut self, text: String) {
         if let Some(clipboard) = &mut self.clipboard {
             if let Err(err) = clipboard.set_contents(text) {
                 eprintln!("Copy/Cut error: {}", err);
@@ -371,7 +371,7 @@ impl EguiMq {
     }
 
     #[cfg(target_os = "macos")]
-    fn get_clipboard(&mut self, _mq_ctx: &mut mq::Context) -> Option<String> {
+    fn get_clipboard(&mut self) -> Option<String> {
         if let Some(clipboard) = &mut self.clipboard {
             match clipboard.get_contents() {
                 Ok(contents) => Some(contents),
