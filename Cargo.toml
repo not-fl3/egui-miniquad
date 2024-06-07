@@ -19,7 +19,7 @@ include = ["../LICENSE-APACHE", "../LICENSE-MIT", "**/*.rs", "Cargo.toml"]
 [dependencies]
 bytemuck = "1.9"
 egui = { version = "0.27", features = ["bytemuck"] }
-miniquad = { version = "=0.4.0" }
+miniquad = { version = "0.4.0" }
 quad-url = "0.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
