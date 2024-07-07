@@ -261,13 +261,11 @@ impl EguiMq {
         let delta = egui::vec2(dx, dy);
         let modifiers = self.egui_input.modifiers;
 
-        self.egui_input.events.push(
-            egui::Event::MouseWheel {
-                modifiers,
-                unit: egui::MouseWheelUnit::Line,
-                delta
-            }
-        );
+        self.egui_input.events.push(egui::Event::MouseWheel {
+            modifiers,
+            unit: egui::MouseWheelUnit::Line,
+            delta,
+        });
     }
 
     /// Call from your [`miniquad::EventHandler`].
