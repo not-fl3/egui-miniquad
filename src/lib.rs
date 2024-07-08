@@ -259,14 +259,13 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
         let delta = egui::vec2(dx, dy);
+        let modifiers = self.egui_input.modifiers;
 
-        let event = if self.egui_input.modifiers.ctrl {
-            // Treat as zoom instead:
-            egui::Event::Zoom((delta.y / 200.0).exp())
-        } else {
-            egui::Event::Scroll(delta)
-        };
-        self.egui_input.events.push(event);
+        self.egui_input.events.push(egui::Event::MouseWheel {
+            modifiers,
+            unit: egui::MouseWheelUnit::Line,
+            delta,
+        });
     }
 
     /// Call from your [`miniquad::EventHandler`].
