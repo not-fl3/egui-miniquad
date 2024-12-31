@@ -26,6 +26,7 @@ impl Stage {
     }
 }
 
+#[egui_miniquad::egui_miniquad]
 impl mq::EventHandler for Stage {
     fn update(&mut self) {}
 
@@ -111,9 +112,6 @@ impl mq::EventHandler for Stage {
 
         self.mq_ctx.commit_frame();
     }
-
-    // generate boilerplate code
-    egui_mq::default_egui_mq!(egui_mq);
 }
 
 fn main() {
