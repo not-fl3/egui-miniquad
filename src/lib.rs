@@ -452,4 +452,58 @@ fn to_mq_cursor_icon(cursor_icon: egui::CursorIcon) -> Option<mq::CursorIcon> {
     }
 }
 
-pub use egui_miniquad_macros::egui_miniquad;
+pub trait EguiMqExt: miniquad::EventHandler {
+    fn get_egui_mq(&mut self) -> &mut EguiMq;
+
+    fn wrap(self) -> Box<Stage> where Self: Sized + 'static {
+        Box::new(Stage::new(Box::new(self)))
+    }
+}
+
+pub struct Stage {
+    inner: Box<dyn EguiMqExt>,
+}
+
+impl Stage {
+    pub fn new(inner: Box<dyn EguiMqExt>) -> Self {
+        Self { inner }
+    }
+}
+
+impl miniquad::EventHandler for Stage {
+    fn draw(&mut self) {
+        self.inner.draw();
+    }
+
+    fn update(&mut self) {
+        self.inner.update();
+    }
+
+    fn mouse_motion_event(&mut self, x: f32, y: f32) {
+        self.inner.get_egui_mq().mouse_motion_event(x, y);
+    }
+
+    fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
+        self.inner.get_egui_mq().mouse_wheel_event(dx, dy);
+    }
+
+    fn mouse_button_down_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.inner.get_egui_mq().mouse_button_down_event(mb, x, y);
+    }
+
+    fn mouse_button_up_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
+        self.inner.get_egui_mq().mouse_button_up_event(mb, x, y);
+    }
+
+    fn char_event(&mut self, character: char, _keymods: mq::KeyMods, _repeat: bool) {
+        self.inner.get_egui_mq().char_event(character);
+    }
+
+    fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods, _repeat: bool) {
+        self.inner.get_egui_mq().key_down_event(keycode, keymods);
+    }
+
+    fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
+        self.inner.get_egui_mq().key_up_event(keycode, keymods);
+    }
+}

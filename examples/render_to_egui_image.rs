@@ -1,4 +1,5 @@
 use egui::load::SizedTexture;
+use egui_miniquad::EguiMqExt;
 use glam::{vec3, EulerRot, Mat4};
 use {egui_miniquad as egui_mq, miniquad as mq};
 
@@ -132,7 +133,6 @@ impl Stage {
     }
 }
 
-#[egui_miniquad::egui_miniquad]
 impl mq::EventHandler for Stage {
     fn update(&mut self) {}
 
@@ -204,12 +204,18 @@ impl mq::EventHandler for Stage {
     }
 }
 
+impl egui_mq::EguiMqExt for Stage {
+    fn get_egui_mq(&mut self) -> &mut egui_mq::EguiMq {
+        &mut self.egui_mq
+    }
+}
+
 fn main() {
     let conf = mq::conf::Conf {
         high_dpi: true,
         ..Default::default()
     };
-    mq::start(conf, || Box::new(Stage::new()));
+    mq::start(conf, || Stage::new().wrap());
 }
 
 mod offscreen_shader {

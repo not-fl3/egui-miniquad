@@ -222,7 +222,6 @@ dependencies = [
  "bytemuck",
  "copypasta",
  "egui",
- "egui-miniquad-macros",
  "egui_demo_lib",
  "getrandom",
  "glam",
@@ -230,15 +229,6 @@ dependencies = [
  "quad-rand",
  "quad-url",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "egui-miniquad-macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

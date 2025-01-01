@@ -1,4 +1,4 @@
-use {egui_miniquad as egui_mq, miniquad as mq};
+use {egui_miniquad::{self as egui_mq, EguiMqExt}, miniquad as mq};
 
 struct Stage {
     egui_mq: egui_mq::EguiMq,
@@ -26,7 +26,6 @@ impl Stage {
     }
 }
 
-#[egui_miniquad::egui_miniquad]
 impl mq::EventHandler for Stage {
     fn update(&mut self) {}
 
@@ -114,6 +113,12 @@ impl mq::EventHandler for Stage {
     }
 }
 
+impl EguiMqExt for Stage {
+    fn get_egui_mq(&mut self) -> &mut egui_mq::EguiMq {
+        &mut self.egui_mq
+    }
+}
+
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -127,5 +132,6 @@ fn main() {
         window_height: 1024,
         ..Default::default()
     };
-    mq::start(conf, || Box::new(Stage::new()));
+
+    mq::start(conf, || Stage::new().wrap());
 }
