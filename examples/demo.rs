@@ -1,4 +1,4 @@
-use {egui_miniquad as egui_mq, miniquad as mq};
+use {egui_miniquad::{self as egui_mq, EguiMqExt}, miniquad as mq};
 
 struct Stage {
     egui_mq: egui_mq::EguiMq,
@@ -111,33 +111,11 @@ impl mq::EventHandler for Stage {
 
         self.mq_ctx.commit_frame();
     }
+}
 
-    fn mouse_motion_event(&mut self, x: f32, y: f32) {
-        self.egui_mq.mouse_motion_event(x, y);
-    }
-
-    fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
-        self.egui_mq.mouse_wheel_event(dx, dy);
-    }
-
-    fn mouse_button_down_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
-        self.egui_mq.mouse_button_down_event(mb, x, y);
-    }
-
-    fn mouse_button_up_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {
-        self.egui_mq.mouse_button_up_event(mb, x, y);
-    }
-
-    fn char_event(&mut self, character: char, _keymods: mq::KeyMods, _repeat: bool) {
-        self.egui_mq.char_event(character);
-    }
-
-    fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods, _repeat: bool) {
-        self.egui_mq.key_down_event(keycode, keymods);
-    }
-
-    fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
-        self.egui_mq.key_up_event(keycode, keymods);
+impl EguiMqExt for Stage {
+    fn get_egui_mq(&mut self) -> &mut egui_mq::EguiMq {
+        &mut self.egui_mq
     }
 }
 
@@ -154,5 +132,6 @@ fn main() {
         window_height: 1024,
         ..Default::default()
     };
-    mq::start(conf, || Box::new(Stage::new()));
+
+    mq::start(conf, || Stage::new().wrap());
 }
