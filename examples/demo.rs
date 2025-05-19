@@ -54,7 +54,7 @@ impl mq::EventHandler for Stage {
             self.prev_egui_zoom_factor = curr_egui_zoom;
 
             egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
-                egui::widgets::global_dark_light_mode_buttons(ui);
+                egui::widgets::global_theme_preference_buttons(ui);
                 ui.checkbox(&mut self.show_egui_demo_windows, "Show egui demo windows");
 
                 ui.group(|ui| {

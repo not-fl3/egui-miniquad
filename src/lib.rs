@@ -168,7 +168,7 @@ impl EguiMq {
     pub fn run(
         &mut self,
         mq_ctx: &mut dyn mq::RenderingBackend,
-        run_ui: impl FnOnce(&mut dyn mq::RenderingBackend, &egui::Context),
+        mut run_ui: impl FnMut(&mut dyn mq::RenderingBackend, &egui::Context),
     ) {
         input::on_frame_start(&mut self.egui_input, &self.egui_ctx);
 
@@ -202,31 +202,33 @@ impl EguiMq {
         self.textures_delta.append(textures_delta);
 
         let egui::PlatformOutput {
+            commands,
             cursor_icon,
-            open_url,
-            copied_text,
             events: _,                    // no screen reader
             ime: _,                       // no IME
             mutable_text_under_cursor: _, // no IME
             ..
         } = platform_output;
 
-        if let Some(url) = open_url {
-            quad_url::link_open(&url.url, url.new_tab);
+        for command in commands {
+            match command {
+                egui::OutputCommand::OpenUrl(open_url) => {
+                    quad_url::link_open(&open_url.url, open_url.new_tab);
+                }
+                egui::OutputCommand::CopyText(copied_text) => {
+                    self.set_clipboard(copied_text);
+                }
+                egui::OutputCommand::CopyImage(_) => (), // No implementation for miniquad
+            }
         }
 
         if cursor_icon == egui::CursorIcon::None {
             miniquad::window::show_mouse(false);
         } else {
             miniquad::window::show_mouse(true);
-
             let mq_cursor_icon = to_mq_cursor_icon(cursor_icon);
             let mq_cursor_icon = mq_cursor_icon.unwrap_or(mq::CursorIcon::Default);
             miniquad::window::set_mouse_cursor(mq_cursor_icon);
-        }
-
-        if !copied_text.is_empty() {
-            self.set_clipboard(copied_text);
         }
     }
 
