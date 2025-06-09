@@ -136,6 +136,7 @@ pub struct EguiMq {
     painter: painter::Painter,
     #[cfg(target_os = "macos")]
     clipboard: Option<copypasta::ClipboardContext>,
+    is_mouse_shown: bool,
     shapes: Option<Vec<egui::epaint::ClippedShape>>,
     textures_delta: egui::TexturesDelta,
 }
@@ -152,6 +153,7 @@ impl EguiMq {
             egui_input: egui::RawInput::default(),
             #[cfg(target_os = "macos")]
             clipboard: init_clipboard(),
+            is_mouse_shown: true,
             shapes: None,
             textures_delta: Default::default(),
         }
@@ -223,9 +225,15 @@ impl EguiMq {
         }
 
         if cursor_icon == egui::CursorIcon::None {
-            miniquad::window::show_mouse(false);
+            if self.is_mouse_shown {
+                miniquad::window::show_mouse(false);
+                self.is_mouse_shown = false;
+            }
         } else {
-            miniquad::window::show_mouse(true);
+            if !self.is_mouse_shown {
+                miniquad::window::show_mouse(true);
+                self.is_mouse_shown = true;
+            }
             let mq_cursor_icon = to_mq_cursor_icon(cursor_icon);
             let mq_cursor_icon = mq_cursor_icon.unwrap_or(mq::CursorIcon::Default);
             miniquad::window::set_mouse_cursor(mq_cursor_icon);
