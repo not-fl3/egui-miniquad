@@ -31,8 +31,8 @@
 //!         self.mq_ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 1.0));
 //!         self.mq_ctx.end_render_pass();
 //!
-//!         self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx|{
-//!             egui::Window::new("Egui Window").show(egui_ctx, |ui| {
+//!         self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ui|{
+//!             egui::Window::new("Egui Window").show(egui_ui.ctx(), |ui| {
 //!                 ui.heading("Hello World!");
 //!             });
 //!         });
@@ -159,10 +159,15 @@ impl EguiMq {
     }
 
     /// Run the ui code for one frame.
+    ///
+    /// The [`egui::Ui`] given to the callback covers the whole screen.
+    /// Use [`egui::Panel`] and [`egui::Window`] to organize your ui.
+    /// [`egui::Ui`] dereferences to [`egui::Context`], so you can also use it
+    /// wherever a context is expected.
     pub fn run(
         &mut self,
         mq_ctx: &mut dyn mq::RenderingBackend,
-        mut run_ui: impl FnMut(&mut dyn mq::RenderingBackend, &egui::Context),
+        mut run_ui: impl FnMut(&mut dyn mq::RenderingBackend, &mut egui::Ui),
     ) {
         input::on_frame_start(&mut self.egui_input, &self.egui_ctx);
 
@@ -178,7 +183,7 @@ impl EguiMq {
 
         let full_output = self
             .egui_ctx
-            .run_ui(self.egui_input.take(), |egui_ctx| run_ui(mq_ctx, egui_ctx));
+            .run_ui(self.egui_input.take(), |egui_ui| run_ui(mq_ctx, egui_ui));
 
         let egui::FullOutput {
             platform_output,
@@ -198,9 +203,8 @@ impl EguiMq {
         let egui::PlatformOutput {
             commands,
             cursor_icon,
-            events: _,                    // no screen reader
-            ime: _,                       // no IME
-            mutable_text_under_cursor: _, // no IME
+            // We ignore the rest: no screen reader (`events`) and no IME
+            // (`ime`, `mutable_text_under_cursor`).
             ..
         } = platform_output;
 

@@ -179,8 +179,8 @@ impl mq::EventHandler for Stage {
         self.mq_ctx.end_render_pass();
 
         // Run the UI code:
-        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
-            egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
+        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ui| {
+            egui::Window::new("egui ❤ miniquad").show(egui_ui.ctx(), |ui| {
                 let img =
                     egui::Image::from_texture(SizedTexture::new(egui_texture_id, [140.0, 140.0]));
                 ui.add(img);
