@@ -210,9 +210,9 @@ impl EguiMq {
         let egui::PlatformOutput {
             commands,
             cursor_icon,
-            events: _,                    // no screen reader
-            ime: _,                       // no IME
-            mutable_text_under_cursor: _, // no IME
+            // We ignore the rest:
+            // `events`: no screen reader.
+            // `ime` and `mutable_text_under_cursor`: no IME.
             ..
         } = platform_output;
 
