@@ -37,7 +37,9 @@ pub struct Painter {
 impl Painter {
     pub fn new(ctx: &mut dyn RenderingBackend) -> Self {
         let source = match ctx.info().backend {
-            Backend::Metal => panic!("egui-miniquad does not support the Metal backend"),
+            Backend::Metal => ShaderSource::Msl {
+                program: shader::METAL,
+            },
             Backend::OpenGl => ShaderSource::Glsl {
                 vertex: shader::VERTEX,
                 fragment: shader::FRAGMENT,
@@ -349,6 +351,57 @@ mod shader {
     void main() {
         vec4 texture_in_gamma = texture2D(u_sampler, v_tc);
         gl_FragColor = v_rgba_in_gamma * texture_in_gamma;
+    }
+    ";
+
+    pub const METAL: &str = r"
+    #include <metal_stdlib>
+
+    using namespace metal;
+
+    struct Uniforms
+    {
+        float2 u_screen_size;
+    };
+
+    struct Vertex
+    {
+        float2 pos   [[attribute(0)]];
+        float2 tc    [[attribute(1)]];
+        float4 srgba [[attribute(2)]];
+    };
+
+    struct RasterizerData
+    {
+        float4 pos           [[position]];
+        float2 tc            [[user(locn0)]];
+        float4 rgba_in_gamma [[user(locn1)]];
+    };
+
+    vertex RasterizerData vertexShader(
+        Vertex v [[stage_in]], 
+        constant Uniforms& uniforms [[buffer(0)]])
+    {
+        RasterizerData out;
+
+        out.pos = float4(
+            2.0 * v.pos.x / uniforms.u_screen_size.x - 1.0,
+            1.0 - 2.0 * v.pos.y / uniforms.u_screen_size.y,
+            0.0,
+            1.0);
+        out.rgba_in_gamma = v.srgba / 255.0;
+        out.tc = v.tc;
+
+        return out;
+    }
+
+    fragment float4 fragmentShader(
+        RasterizerData in [[stage_in]],
+        texture2d<float> tex [[texture(0)]],
+        sampler tex_sampler [[sampler(0)]])
+    {
+        float4 texture_in_gamma = tex.sample(tex_sampler, in.tc);
+        return in.rgba_in_gamma * texture_in_gamma;
     }
     ";
 
