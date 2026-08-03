@@ -1,4 +1,10 @@
 # Unreleased
+* Raise the MSRV to `1.95`
+* Log warnings with the `log` crate instead of printing them to stderr
+
+# 0.16.0 - 2025-05-20
+* Update `egui` to `0.31.1`
+* Update `miniquad` to `0.4.8`
 
 # 0.15.0 - 2024-07-08
 * Update `egui` to `0.28.0`
