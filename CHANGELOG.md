@@ -1,4 +1,6 @@
 # Unreleased
+* Raise the MSRV to `1.95`
+* Log warnings with the `log` crate instead of printing them to stderr
 
 # 0.16.0 - 2025-05-20
 * Update `egui` to `0.31.1`

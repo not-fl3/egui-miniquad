@@ -15,7 +15,7 @@ use miniquad::{
 ///
 /// See the [`custom3d_glow`](https://github.com/emilk/egui/blob/master/crates/egui_demo_app/src/apps/custom3d_wgpu.rs) demo source for a detailed usage example.
 pub struct CallbackFn {
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     f: Box<dyn Fn(egui::PaintCallbackInfo, &mut dyn RenderingBackend) + Sync + Send>,
 }
 
@@ -24,7 +24,7 @@ impl CallbackFn {
         callback: impl Fn(egui::PaintCallbackInfo, &mut dyn RenderingBackend) + Sync + Send + 'static,
     ) -> Self {
         let f = Box::new(callback);
-        CallbackFn { f }
+        Self { f }
     }
 }
 
@@ -35,9 +35,9 @@ pub struct Painter {
 }
 
 impl Painter {
-    pub fn new(ctx: &mut dyn RenderingBackend) -> Painter {
+    pub fn new(ctx: &mut dyn RenderingBackend) -> Self {
         let source = match ctx.info().backend {
-            Backend::Metal => unimplemented!(),
+            Backend::Metal => panic!("egui-miniquad does not support the Metal backend"),
             Backend::OpenGl => ShaderSource::Glsl {
                 vertex: shader::VERTEX,
                 fragment: shader::FRAGMENT,
@@ -83,7 +83,7 @@ impl Painter {
             images: vec![white_texture],
         };
 
-        Painter {
+        Self {
             pipeline,
             bindings,
             textures: Default::default(),
@@ -117,7 +117,7 @@ impl Painter {
                     }
                 }
             } else {
-                eprintln!("Failed to find egui texture {tex_id:?}");
+                log::warn!("Failed to find egui texture {tex_id:?}");
             }
         } else {
             // New texture (or full update).
@@ -215,8 +215,8 @@ impl Painter {
                     if let Some(callback) = callback.callback.downcast_ref::<CallbackFn>() {
                         (callback.f)(info, ctx);
                     } else {
-                        eprintln!(
-                            "Warning: Unsupported render callback. Expected egui_miniquad::CallbackFn"
+                        log::warn!(
+                            "Unsupported render callback. Expected egui_miniquad::CallbackFn"
                         );
                     }
                 }
@@ -239,7 +239,7 @@ impl Painter {
         // TODO: support u32 indices in miniquad and just use "mesh.indices" without a need for `split_to_u16`
         let meshes = mesh.split_to_u16();
         for mesh in meshes {
-            assert!(mesh.is_valid());
+            assert!(mesh.is_valid(), "Invalid egui mesh");
             let vertices_size_bytes = mesh.vertices.len() * std::mem::size_of::<Vertex>();
             if ctx.buffer_size(self.bindings.vertex_buffers[0]) < vertices_size_bytes {
                 ctx.delete_buffer(self.bindings.vertex_buffers[0]);
@@ -273,7 +273,7 @@ impl Painter {
                     if let Some(tex) = self.textures.get(&mesh.texture_id) {
                         *tex
                     } else {
-                        eprintln!("Texture {id:?} not found");
+                        log::warn!("Texture {id:?} not found");
                         continue;
                     }
                 }
@@ -316,7 +316,7 @@ impl Painter {
 mod shader {
     use miniquad::{ShaderMeta, UniformBlockLayout, UniformDesc, UniformType};
 
-    pub const VERTEX: &str = r#"
+    pub const VERTEX: &str = r"
     #version 100
     uniform vec2 u_screen_size;
 
@@ -336,9 +336,9 @@ mod shader {
             v_rgba_in_gamma = a_srgba / 255.0;
             v_tc = a_tc;
     }
-    "#;
+    ";
 
-    pub const FRAGMENT: &str = r#"
+    pub const FRAGMENT: &str = r"
     #version 100
     uniform sampler2D u_sampler;
     precision highp float;
@@ -350,11 +350,11 @@ mod shader {
         vec4 texture_in_gamma = texture2D(u_sampler, v_tc);
         gl_FragColor = v_rgba_in_gamma * texture_in_gamma;
     }
-    "#;
+    ";
 
     pub fn meta() -> ShaderMeta {
         ShaderMeta {
-            images: vec!["u_sampler".to_string()],
+            images: vec!["u_sampler".to_owned()],
             uniforms: UniformBlockLayout {
                 uniforms: vec![UniformDesc::new("u_screen_size", UniformType::Float2)],
             },
