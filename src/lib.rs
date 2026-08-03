@@ -120,7 +120,6 @@ use miniquad as mq;
 
 pub use painter::CallbackFn;
 
-
 /// egui bindings for miniquad.
 ///
 ///
@@ -358,10 +357,7 @@ impl EguiMq {
     fn get_clipboard(&mut self) -> Option<String> {
         mq::window::clipboard_get()
     }
-
-
 }
-
 
 fn to_egui_button(mb: mq::MouseButton) -> egui::PointerButton {
     match mb {
