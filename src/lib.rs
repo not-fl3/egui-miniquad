@@ -364,6 +364,23 @@ impl EguiMq {
         }
     }
 
+    /// Call from your [`miniquad::EventHandler`].
+    pub fn touch_event(&mut self, phase: mq::TouchPhase, id: u64, x: f32, y: f32) {
+        let pos = egui::pos2(
+            x / self.egui_ctx.pixels_per_point(),
+            y / self.egui_ctx.pixels_per_point(),
+        );
+        let phase = to_egui_phase(phase);
+
+        self.egui_input.events.push(egui::Event::Touch {
+            device_id: egui::TouchDeviceId(0),
+            id: egui::TouchId(id),
+            phase,
+            pos,
+            force: None, // miniquad does not report touch pressure
+        });
+    }
+
     #[cfg(not(target_os = "macos"))]
     #[expect(
         clippy::needless_pass_by_ref_mut,
@@ -426,6 +443,15 @@ fn to_egui_button(mb: mq::MouseButton) -> egui::PointerButton {
         mq::MouseButton::Left | mq::MouseButton::Unknown => egui::PointerButton::Primary,
         mq::MouseButton::Middle => egui::PointerButton::Middle,
         mq::MouseButton::Right => egui::PointerButton::Secondary,
+    }
+}
+
+fn to_egui_phase(phase: mq::TouchPhase) -> egui::TouchPhase {
+    match phase {
+        mq::TouchPhase::Started => egui::TouchPhase::Start,
+        mq::TouchPhase::Moved => egui::TouchPhase::Move,
+        mq::TouchPhase::Ended => egui::TouchPhase::End,
+        mq::TouchPhase::Cancelled => egui::TouchPhase::Cancel,
     }
 }
 
