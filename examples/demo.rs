@@ -38,9 +38,11 @@ impl mq::EventHandler for Stage {
         let dpi_scale = mq::window::dpi_scale();
 
         // Run the UI code:
-        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
+        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ui| {
+            let egui_ctx = egui_ui.ctx().clone();
+
             if self.show_egui_demo_windows {
-                self.egui_demo_windows.ui(egui_ctx);
+                self.egui_demo_windows.ui(egui_ui);
             }
 
             // zoom factor could have been changed by the user in egui using Ctrl/Cmd and -/+/0,
@@ -53,7 +55,7 @@ impl mq::EventHandler for Stage {
             }
             self.prev_egui_zoom_factor = curr_egui_zoom;
 
-            egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
+            egui::Window::new("egui ❤ miniquad").show(&egui_ctx, |ui| {
                 egui::widgets::global_theme_preference_buttons(ui);
                 ui.checkbox(&mut self.show_egui_demo_windows, "Show egui demo windows");
 
@@ -90,11 +92,11 @@ impl mq::EventHandler for Stage {
             });
 
             // Don't change zoom while dragging the slider
-            if !egui_ctx.is_using_pointer() {
+            if !egui_ctx.egui_is_using_pointer() {
                 egui_ctx.set_zoom_factor(self.zoom_factor);
             }
 
-            egui::Window::new("Color Test").show(egui_ctx, |ui| {
+            egui::Window::new("Color Test").show(&egui_ctx, |ui| {
                 egui::ScrollArea::both()
                     .auto_shrink([false; 2])
                     .show(ui, |ui| {

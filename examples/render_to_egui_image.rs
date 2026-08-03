@@ -142,8 +142,13 @@ impl mq::EventHandler for Stage {
 
     fn draw(&mut self) {
         let (width, height) = mq::window::screen_size();
-        let proj = Mat4::perspective_rh_gl(60.0f32.to_radians(), width / height, 0.01, 10.0);
-        let view = Mat4::look_at_rh(
+        let proj = glam::camera::rh::proj::opengl::perspective(
+            60.0f32.to_radians(),
+            width / height,
+            0.01,
+            10.0,
+        );
+        let view = glam::camera::rh::view::look_at_mat4(
             vec3(0.0, 1.5, 3.0),
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
@@ -185,8 +190,8 @@ impl mq::EventHandler for Stage {
         self.mq_ctx.end_render_pass();
 
         // Run the UI code:
-        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ctx| {
-            egui::Window::new("egui ❤ miniquad").show(egui_ctx, |ui| {
+        self.egui_mq.run(&mut *self.mq_ctx, |_mq_ctx, egui_ui| {
+            egui::Window::new("egui ❤ miniquad").show(egui_ui.ctx(), |ui| {
                 let img =
                     egui::Image::from_texture(SizedTexture::new(egui_texture_id, [140.0, 140.0]));
                 ui.add(img);
