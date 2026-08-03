@@ -142,26 +142,19 @@ impl mq::EventHandler for Stage {
         self.egui_mq.key_up_event(keycode, keymods);
     }
 
-    fn touch_event(
-        &mut self,
-        ctx: &mut mq::Context,
-        phase: mq::TouchPhase,
-        id: u64,
-        x: f32,
-        y: f32,
-    ) {
+    fn touch_event(&mut self, phase: mq::TouchPhase, id: u64, x: f32, y: f32) {
         if phase == mq::TouchPhase::Started {
-            self.mouse_button_down_event(ctx, mq::MouseButton::Left, x, y);
+            self.mouse_button_down_event(mq::MouseButton::Left, x, y);
         }
 
         if phase == mq::TouchPhase::Ended {
-            self.mouse_button_up_event(ctx, mq::MouseButton::Left, x, y);
+            self.mouse_button_up_event(mq::MouseButton::Left, x, y);
         }
 
         if phase == mq::TouchPhase::Moved {
-            self.mouse_motion_event(ctx, x, y);
+            self.mouse_motion_event(x, y);
         }
-        
+
         self.egui_mq.touch_event(phase, id, x, y);
     }
 }

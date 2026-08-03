@@ -377,8 +377,8 @@ impl EguiMq {
             id: egui::TouchId(id),
             phase,
             pos,
-            force: 0.,
-        })
+            force: None, // miniquad does not report touch pressure
+        });
     }
 
     #[cfg(not(target_os = "macos"))]
