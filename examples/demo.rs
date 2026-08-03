@@ -59,7 +59,7 @@ impl mq::EventHandler for Stage {
 
                 ui.group(|ui| {
                     ui.label("Physical pixels per each logical 'point':");
-                    ui.label(format!("native: {:.2}", dpi_scale));
+                    ui.label(format!("native: {dpi_scale:.2}"));
                     ui.label(format!("egui:   {:.2}", ui.ctx().pixels_per_point()));
                     ui.label("Current zoom factor:");
                     ui.add(

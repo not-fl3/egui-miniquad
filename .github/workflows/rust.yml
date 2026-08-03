@@ -18,6 +18,21 @@ jobs:
           command: check
           args: --all-features
 
+  check_msrv:
+    name: cargo check --all-features (MSRV)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.95.0 # Keep in sync with `rust-version` in Cargo.toml and `rust-toolchain`
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all-features --all-targets
+
   test:
     name: cargo test
     runs-on: ubuntu-latest
@@ -64,4 +79,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --all-features --all-targets -- -D warnings

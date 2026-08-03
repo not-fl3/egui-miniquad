@@ -1,3 +1,8 @@
+#![expect(
+    unsafe_code,
+    reason = "We need miniquad's raw texture id to show the offscreen texture in egui"
+)]
+
 use egui::load::SizedTexture;
 use glam::{vec3, EulerRot, Mat4};
 use {egui_miniquad as egui_mq, miniquad as mq};
@@ -13,7 +18,7 @@ struct Stage {
 }
 
 impl Stage {
-    pub fn new() -> Stage {
+    pub fn new() -> Self {
         let mut mq_ctx = mq::window::new_rendering_backend();
 
         let color_img = mq_ctx.new_render_texture(mq::TextureParams {
@@ -101,7 +106,7 @@ impl Stage {
                 },
                 offscreen_shader::meta(),
             )
-            .unwrap();
+            .expect("Failed to compile the offscreen shader");
 
         let offscreen_pipeline = mq_ctx.new_pipeline(
             &[mq::BufferLayout {
@@ -120,7 +125,7 @@ impl Stage {
             },
         );
 
-        Stage {
+        Self {
             egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
             offscreen_pipeline,
             offscreen_bind,
@@ -169,6 +174,7 @@ impl mq::EventHandler for Stage {
         let mq_texture = self.mq_ctx.render_pass_texture(self.offscreen_pass);
 
         // create egui TextureId from Miniquad GL texture Id
+        // SAFETY: `mq_texture` comes from the render pass we just ended, so it is still alive.
         let raw_id = match unsafe { self.mq_ctx.texture_raw_id(mq_texture) } {
             mq::RawId::OpenGl(id) => id as u64,
         };
@@ -242,7 +248,7 @@ fn main() {
 mod offscreen_shader {
     use miniquad as mq;
 
-    pub const VERTEX: &str = r#"#version 100
+    pub const VERTEX: &str = r"#version 100
     attribute vec4 pos;
     attribute vec4 color0;
 
@@ -254,15 +260,15 @@ mod offscreen_shader {
         gl_Position = mvp * pos;
         color = color0;
     }
-    "#;
+    ";
 
-    pub const FRAGMENT: &str = r#"#version 100
+    pub const FRAGMENT: &str = r"#version 100
     varying lowp vec4 color;
 
     void main() {
         gl_FragColor = color;
     }
-    "#;
+    ";
 
     pub fn meta() -> mq::ShaderMeta {
         mq::ShaderMeta {
