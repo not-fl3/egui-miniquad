@@ -103,6 +103,10 @@ mod painter;
 
 /// Required by `getrandom` crate.
 #[cfg(target_arch = "wasm32")]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "The signature is dictated by `register_custom_getrandom!`"
+)]
 fn getrandom(buf: &mut [u8]) -> Result<(), getrandom::Error> {
     // TODO: higher quality random function, e.g. by defining this in JavaScript
     for value in buf {
@@ -173,11 +177,13 @@ impl EguiMq {
         if self.native_dpi_scale != miniquad::window::dpi_scale() {
             // DPI scale change (maybe new monitor?). Tell egui to change:
             self.native_dpi_scale = miniquad::window::dpi_scale();
-            self.egui_input
+            if let Some(viewport) = self
+                .egui_input
                 .viewports
                 .get_mut(&self.egui_input.viewport_id)
-                .unwrap()
-                .native_pixels_per_point = Some(self.native_dpi_scale);
+            {
+                viewport.native_pixels_per_point = Some(self.native_dpi_scale);
+            }
         }
 
         let full_output = self
@@ -193,7 +199,7 @@ impl EguiMq {
         } = full_output;
 
         if self.shapes.is_some() {
-            eprintln!("Egui contents not drawn. You need to call `draw` after calling `run`");
+            log::warn!("Egui contents not drawn. You need to call `draw` after calling `run`");
         }
         self.shapes = Some(shapes);
         self.pixels_per_point = pixels_per_point;
@@ -202,8 +208,9 @@ impl EguiMq {
         let egui::PlatformOutput {
             commands,
             cursor_icon,
-            // We ignore the rest: no screen reader (`events`) and no IME
-            // (`ime`, `mutable_text_under_cursor`).
+            // We ignore the rest:
+            // `events`: no screen reader.
+            // `ime` and `mutable_text_under_cursor`: no IME.
             ..
         } = platform_output;
 
@@ -213,7 +220,7 @@ impl EguiMq {
                     quad_url::link_open(&open_url.url, open_url.new_tab);
                 }
                 egui::OutputCommand::CopyText(copied_text) => {
-                    self.set_clipboard(copied_text);
+                    set_clipboard(&copied_text);
                 }
                 egui::OutputCommand::CopyImage(_) => (), // No implementation for miniquad
             }
@@ -242,7 +249,7 @@ impl EguiMq {
             );
             self.textures_delta.clear();
         } else {
-            eprintln!("Failed to draw egui. You need to call `end_frame` before calling `draw`");
+            log::warn!("Failed to draw egui. You need to call `end_frame` before calling `draw`");
         }
     }
 
@@ -252,7 +259,7 @@ impl EguiMq {
             x / self.egui_ctx.pixels_per_point(),
             y / self.egui_ctx.pixels_per_point(),
         );
-        self.egui_input.events.push(egui::Event::PointerMoved(pos))
+        self.egui_input.events.push(egui::Event::PointerMoved(pos));
     }
 
     /// Call from your [`miniquad::EventHandler`].
@@ -280,7 +287,7 @@ impl EguiMq {
             button,
             pressed: true,
             modifiers: self.egui_input.modifiers,
-        })
+        });
     }
 
     /// Call from your [`miniquad::EventHandler`].
@@ -296,7 +303,7 @@ impl EguiMq {
             button,
             pressed: false,
             modifiers: self.egui_input.modifiers,
-        })
+        });
     }
 
     /// Call from your [`miniquad::EventHandler`].
@@ -321,7 +328,7 @@ impl EguiMq {
         } else if modifiers.command && keycode == mq::KeyCode::C {
             self.egui_input.events.push(egui::Event::Copy);
         } else if modifiers.command && keycode == mq::KeyCode::V {
-            if let Some(text) = self.get_clipboard() {
+            if let Some(text) = get_clipboard() {
                 self.egui_input.events.push(egui::Event::Text(text));
             }
         } else if let Some(key) = input::egui_key_from_mq_key(keycode) {
@@ -331,7 +338,7 @@ impl EguiMq {
                 modifiers,
                 repeat: false,      // egui will set this for us
                 physical_key: None, // unsupported
-            })
+            });
         }
     }
 
@@ -346,29 +353,32 @@ impl EguiMq {
                 modifiers,
                 repeat: false,      // egui will set this for us
                 physical_key: None, // unsupported
-            })
+            });
         }
     }
+}
 
-    fn set_clipboard(&mut self, text: String) {
-        mq::window::clipboard_set(&text);
-    }
+fn set_clipboard(text: &str) {
+    mq::window::clipboard_set(text);
+}
 
-    fn get_clipboard(&mut self) -> Option<String> {
-        mq::window::clipboard_get()
-    }
+fn get_clipboard() -> Option<String> {
+    mq::window::clipboard_get()
 }
 
 fn to_egui_button(mb: mq::MouseButton) -> egui::PointerButton {
     match mb {
-        mq::MouseButton::Left => egui::PointerButton::Primary,
-        mq::MouseButton::Right => egui::PointerButton::Secondary,
+        mq::MouseButton::Left | mq::MouseButton::Unknown => egui::PointerButton::Primary,
         mq::MouseButton::Middle => egui::PointerButton::Middle,
-        mq::MouseButton::Unknown => egui::PointerButton::Primary,
+        mq::MouseButton::Right => egui::PointerButton::Secondary,
     }
 }
 
 fn to_mq_cursor_icon(cursor_icon: egui::CursorIcon) -> Option<mq::CursorIcon> {
+    #[expect(
+        clippy::match_same_arms,
+        reason = "We group the arms by why they map the way they do"
+    )]
     match cursor_icon {
         // Handled outside this function
         CursorIcon::None => None,
