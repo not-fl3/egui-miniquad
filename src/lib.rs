@@ -137,6 +137,7 @@ pub struct EguiMq {
     painter: painter::Painter,
     shapes: Option<Vec<egui::epaint::ClippedShape>>,
     textures_delta: egui::TexturesDelta,
+    modifiers: egui::Modifiers
 }
 
 impl EguiMq {
@@ -151,6 +152,7 @@ impl EguiMq {
             egui_input: egui::RawInput::default(),
             shapes: None,
             textures_delta: Default::default(),
+            modifiers: egui::Modifiers::default()
         }
     }
 
@@ -265,7 +267,7 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
         let delta = egui::vec2(dx, dy);
-        let modifiers = self.egui_input.modifiers;
+        let modifiers = self.modifiers;
 
         self.egui_input.events.push(egui::Event::MouseWheel {
             modifiers,
@@ -286,7 +288,7 @@ impl EguiMq {
             pos,
             button,
             pressed: true,
-            modifiers: self.egui_input.modifiers,
+            modifiers: self.modifiers,
         });
     }
 
@@ -302,15 +304,23 @@ impl EguiMq {
             pos,
             button,
             pressed: false,
-            modifiers: self.egui_input.modifiers,
+            modifiers: self.modifiers,
         });
+    }
+
+    // In egui 0.36 modifiers have been removed as a is field in RawInput
+    fn set_modifiers(&mut self, modifiers: egui::Modifiers) {
+        if self.modifiers != modifiers {
+            self.modifiers = modifiers;
+            self.egui_input.events.push(egui::Event::ModifiersChanged(modifiers));
+        }
     }
 
     /// Call from your [`miniquad::EventHandler`].
     pub fn char_event(&mut self, chr: char) {
         if input::is_printable_char(chr)
-            && !self.egui_input.modifiers.ctrl
-            && !self.egui_input.modifiers.mac_cmd
+            && !self.modifiers.ctrl
+            && !self.modifiers.mac_cmd
         {
             self.egui_input
                 .events
@@ -321,7 +331,7 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn key_down_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
         let modifiers = input::egui_modifiers_from_mq_modifiers(keymods);
-        self.egui_input.modifiers = modifiers;
+        self.set_modifiers(modifiers);
 
         if modifiers.command && keycode == mq::KeyCode::X {
             self.egui_input.events.push(egui::Event::Cut);
@@ -345,7 +355,7 @@ impl EguiMq {
     /// Call from your [`miniquad::EventHandler`].
     pub fn key_up_event(&mut self, keycode: mq::KeyCode, keymods: mq::KeyMods) {
         let modifiers = input::egui_modifiers_from_mq_modifiers(keymods);
-        self.egui_input.modifiers = modifiers;
+        self.set_modifiers(modifiers);
         if let Some(key) = input::egui_key_from_mq_key(keycode) {
             self.egui_input.events.push(egui::Event::Key {
                 key,
