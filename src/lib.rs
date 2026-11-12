@@ -216,6 +216,7 @@ impl EguiMq {
             ..
         } = platform_output;
 
+        // In egui 0.37 OutputCommand now has TextSelectionSettled variant
         for command in commands {
             match command {
                 egui::OutputCommand::OpenUrl(open_url) => {
@@ -224,7 +225,7 @@ impl EguiMq {
                 egui::OutputCommand::CopyText(copied_text) => {
                     set_clipboard(&copied_text);
                 }
-                egui::OutputCommand::CopyImage(_) => (), // No implementation for miniquad
+                egui::OutputCommand::CopyImage(_) | egui::OutputCommand::TextSelectionSettled(_) => (), // No implementation for miniquad
             }
         }
 
@@ -269,11 +270,13 @@ impl EguiMq {
         let delta = egui::vec2(dx, dy);
         let modifiers = self.modifiers;
 
+        // In egui 0.37 MouseWheel has a new `source` field
         self.egui_input.events.push(egui::Event::MouseWheel {
             modifiers,
             unit: egui::MouseWheelUnit::Line,
             delta,
             phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Unknown
         });
     }
 
