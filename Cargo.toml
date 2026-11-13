@@ -30,6 +30,10 @@ quad-rand = "0.2.3"
 [dev-dependencies]
 egui_demo_lib = { version = "0.37.0", default-features = false }
 glam = "0.33.2"
+# forthe demo fonts and PNG decoding
+egui = { version = "0.37.0", features = ["monochrome_emoji_fonts"] }
+egui_extras = { version = "0.37.0", features = ["image"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
 
 [profile.release]
 opt-level = 2 # fast and small wasm

@@ -16,9 +16,11 @@ struct Stage {
 impl Stage {
     fn new() -> Self {
         let mut mq_ctx = mq::window::new_rendering_backend();
+        let egui_mq = egui_mq::EguiMq::new(&mut *mq_ctx);
+        egui_extras::install_image_loaders(egui_mq.egui_ctx());
 
         Self {
-            egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
+            egui_mq,
             show_egui_demo_windows: true,
             egui_demo_windows: Default::default(),
             color_test: Default::default(),
