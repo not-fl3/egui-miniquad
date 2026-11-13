@@ -165,12 +165,17 @@ impl Painter {
         textures_delta: &egui::TexturesDelta,
         egui_ctx: &egui::Context,
     ) {
-        for (id, image_delta) in &textures_delta.set {
-            self.set_texture(ctx, *id, image_delta);
+        // In egui 0.36 TexturesDelta.set returns HashMap<TextureId, SmallVec<[ImageDelta; 1]>>
+        #[expect(clippy::iter_over_hash_type)]
+        for (id, image_deltas) in &textures_delta.set {
+            for image_delta in image_deltas {
+                self.set_texture(ctx, *id, image_delta);
+            }
         }
 
         self.paint(ctx, primtives, egui_ctx);
 
+        #[expect(clippy::iter_over_hash_type)]
         for &id in &textures_delta.free {
             self.free_texture(ctx, id);
         }

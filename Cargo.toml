@@ -18,7 +18,7 @@ include = ["../LICENSE-APACHE", "../LICENSE-MIT", "**/*.rs", "Cargo.toml"]
 
 [dependencies]
 bytemuck = "1.25"
-egui = { version = "0.35.0", features = ["bytemuck"] }
+egui = { version = "0.37.0", features = ["bytemuck"] }
 log = "0.4"
 miniquad = { version = "0.4.11" }
 quad-url = "0.1"
@@ -28,8 +28,12 @@ getrandom = { version = "0.2.7", features = ["custom"] }
 quad-rand = "0.2.3"
 
 [dev-dependencies]
-egui_demo_lib = { version = "0.35.0", default-features = false }
+egui_demo_lib = { version = "0.37.0", default-features = false }
 glam = "0.33.2"
+# for the demo fonts and PNG decoding
+egui = { version = "0.37.0", features = ["monochrome_emoji_fonts"] }
+egui_extras = { version = "0.37.0", features = ["image"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
 
 [profile.release]
 opt-level = 2 # fast and small wasm

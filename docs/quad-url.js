@@ -10,7 +10,7 @@ function set_url(params, hash) {
     let result = window.location.origin + window.location.pathname;
     if (params != "") {
         if (params !== undefined && params !== null) {
-            result += '?' + params;
+            result += '?' + params;    
         } else {
             result += window.location.search;
         }
@@ -22,15 +22,15 @@ function set_url(params, hash) {
             result += window.location.hash;
         }
     }
-    window.history.pushState({ path: result }, '', result); // https://stackoverflow.com/questions/10970078/modifying-a-query-string-without-reloading-the-page
+    window.history.pushState({path:result},'',result); // https://stackoverflow.com/questions/10970078/modifying-a-query-string-without-reloading-the-page
 }
 
 params_register_js_plugin = function (importObject) {
     importObject.env.quad_url_path = function (full) {
         if (full == 1) {
-            return js_object(window.location.href);
+            return js_object(window.location.href);    
         } else {
-            return js_object(window.location.origin + window.location.pathname);
+            return js_object(window.location.origin + window.location.pathname);    
         }
     }
     importObject.env.quad_url_param_count = function () {
@@ -60,7 +60,6 @@ params_register_js_plugin = function (importObject) {
         let value = get_js_object(value_rs);
         let params = new URLSearchParams(window.location.search);
         params.set(name, value);
-        // todo убрать вопрос если пусто
         set_url(params.toString(), null);
     }
     importObject.env.quad_url_delete_program_parameter = function (name_rs) {
@@ -70,7 +69,7 @@ params_register_js_plugin = function (importObject) {
         set_url(params.toString(), null);
     }
     importObject.env.quad_url_get_hash = function () {
-        return js_object(window.location.hash);
+        return js_object(window.location.hash);    
     }
     importObject.env.quad_url_set_hash = function (hash) {
         set_url(null, get_js_object(hash));
@@ -81,5 +80,5 @@ miniquad_add_plugin({
     register_plugin: params_register_js_plugin,
     on_init: params_set_mem,
     name: "quad_url",
-    version: "0.1.0"
+    version: 65539
 });
