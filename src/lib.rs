@@ -137,7 +137,7 @@ pub struct EguiMq {
     painter: painter::Painter,
     shapes: Option<Vec<egui::epaint::ClippedShape>>,
     textures_delta: egui::TexturesDelta,
-    modifiers: egui::Modifiers
+    modifiers: egui::Modifiers,
 }
 
 impl EguiMq {
@@ -152,7 +152,7 @@ impl EguiMq {
             egui_input: egui::RawInput::default(),
             shapes: None,
             textures_delta: Default::default(),
-            modifiers: egui::Modifiers::default()
+            modifiers: egui::Modifiers::default(),
         }
     }
 
@@ -225,7 +225,8 @@ impl EguiMq {
                 egui::OutputCommand::CopyText(copied_text) => {
                     set_clipboard(&copied_text);
                 }
-                egui::OutputCommand::CopyImage(_) | egui::OutputCommand::TextSelectionSettled(_) => (), // No implementation for miniquad
+                egui::OutputCommand::CopyImage(_)
+                | egui::OutputCommand::TextSelectionSettled(_) => (), // No implementation for miniquad
             }
         }
 
@@ -276,7 +277,7 @@ impl EguiMq {
             unit: egui::MouseWheelUnit::Line,
             delta,
             phase: egui::TouchPhase::Move,
-            source: egui::MouseWheelSource::Unknown
+            source: egui::MouseWheelSource::Unknown,
         });
     }
 
@@ -315,16 +316,15 @@ impl EguiMq {
     fn set_modifiers(&mut self, modifiers: egui::Modifiers) {
         if self.modifiers != modifiers {
             self.modifiers = modifiers;
-            self.egui_input.events.push(egui::Event::ModifiersChanged(modifiers));
+            self.egui_input
+                .events
+                .push(egui::Event::ModifiersChanged(modifiers));
         }
     }
 
     /// Call from your [`miniquad::EventHandler`].
     pub fn char_event(&mut self, chr: char) {
-        if input::is_printable_char(chr)
-            && !self.modifiers.ctrl
-            && !self.modifiers.mac_cmd
-        {
+        if input::is_printable_char(chr) && !self.modifiers.ctrl && !self.modifiers.mac_cmd {
             self.egui_input
                 .events
                 .push(egui::Event::Text(chr.to_string()));
